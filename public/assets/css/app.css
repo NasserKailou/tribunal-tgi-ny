@@ -1,0 +1,114 @@
+/* ============================================
+   TGI-NY — Styles personnalisés
+   ============================================ */
+
+:root {
+    --navy:   #1a3c5e;
+    --navy-dark: #0d2240;
+    --gold:   #c9a227;
+    --gold-light: #f0d060;
+    --sidebar-width: 260px;
+    --topbar-height: 58px;
+    --bg: #f0f2f5;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); font-family: 'Segoe UI', sans-serif; }
+
+/* Sidebar */
+.sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-width); background: var(--navy-dark);
+    color: #fff; overflow-y: auto; z-index: 1000;
+    transition: transform 0.3s ease;
+    box-shadow: 3px 0 15px rgba(0,0,0,0.2);
+}
+.sidebar.collapsed { transform: translateX(calc(-1 * var(--sidebar-width))); }
+.sidebar-brand {
+    display: flex; align-items: center; gap: 12px;
+    padding: 20px 18px 14px; border-bottom: 1px solid rgba(201,162,39,0.3);
+    background: linear-gradient(180deg, rgba(201,162,39,0.15) 0%, transparent 100%);
+}
+.sidebar-brand > i { font-size: 2rem; color: var(--gold); flex-shrink: 0; }
+.sidebar-nav { padding: 8px 0; }
+.sidebar-link {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 18px; color: rgba(255,255,255,0.8);
+    text-decoration: none; font-size: 0.88rem;
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
+}
+.sidebar-link:hover { color: #fff; background: rgba(255,255,255,0.08); border-left-color: var(--gold); }
+.sidebar-link.active { color: #fff; background: rgba(201,162,39,0.2); border-left-color: var(--gold); font-weight: 600; }
+.sidebar-link i { font-size: 1.1rem; width: 20px; text-align: center; }
+.sidebar-section {
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.4); padding: 14px 18px 4px;
+    text-transform: uppercase;
+}
+
+/* Main */
+.main-content {
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+    transition: margin-left 0.3s ease;
+}
+.main-content.sidebar-collapsed { margin-left: 0; }
+
+/* Top navbar */
+.top-navbar {
+    position: sticky; top: 0; z-index: 999;
+    height: var(--topbar-height);
+    background: var(--navy);
+    color: #fff;
+    display: flex; align-items: center;
+    padding: 0 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.navbar-brand-text { font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.8); }
+.user-btn { color: rgba(255,255,255,0.9); border-color: rgba(255,255,255,0.2); }
+.user-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+.page-content { padding-top: 20px; }
+
+/* Stat cards */
+.stat-card {
+    border-radius: 12px; padding: 20px 22px; color: #fff;
+    display: flex; flex-direction: column; gap: 6px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+    position: relative; overflow: hidden;
+}
+.stat-card::before { content:''; position:absolute; top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.12); }
+.stat-card-blue    { background: linear-gradient(135deg, #0d6efd, #0a58ca); }
+.stat-card-orange  { background: linear-gradient(135deg, #fd7e14, #e55c00); }
+.stat-card-green   { background: linear-gradient(135deg, #198754, #136940); }
+.stat-card-red     { background: linear-gradient(135deg, #dc3545, #b02a37); }
+.stat-icon { font-size: 1.8rem; opacity: 0.85; }
+.stat-value { font-size: 2.2rem; font-weight: 700; line-height: 1; }
+.stat-label { font-size: 0.82rem; opacity: 0.85; }
+
+/* Cards */
+.card { border-radius: 10px; }
+.card-header { border-radius: 10px 10px 0 0 !important; font-size: 0.9rem; }
+
+/* Badges statuts */
+.badge { font-weight: 500; }
+
+/* Tables */
+.table th { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #6c757d; }
+.table td { font-size: 0.88rem; vertical-align: middle; }
+.table-hover tbody tr:hover { background: rgba(26,60,94,0.04); }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sidebar { transform: translateX(calc(-1 * var(--sidebar-width))); }
+    .main-content { margin-left: 0; }
+    .sidebar.open { transform: translateX(0); }
+}
+
+/* Print */
+@media print {
+    .sidebar, .top-navbar, .btn, form { display: none !important; }
+    .main-content { margin-left: 0; }
+    #map { height: 80vh !important; }
+}
