@@ -4,11 +4,11 @@ class Database {
     private PDO $pdo;
 
     private function __construct() {
-        $host   = getenv('DB_HOST')   ?: 'localhost';
-        $dbname = getenv('DB_NAME')   ?: 'tribunal_tgi_ny';
-        $user   = getenv('DB_USER')   ?: 'root';
-        $pass   = getenv('DB_PASS')   ?: '';
-        $port   = getenv('DB_PORT')   ?: '3306';
+        $host   = getenv('DB_HOST') ?: 'localhost';
+        $dbname = getenv('DB_NAME') ?: 'tribunal_tgi_ny';
+        $user   = getenv('DB_USER') ?: 'tgi_user';
+        $pass   = getenv('DB_PASS') ?: 'TGI_Niamey@2026';
+        $port   = getenv('DB_PORT') ?: '3306';
 
         $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4";
         $this->pdo = new PDO($dsn, $user, $pass, [
@@ -19,15 +19,11 @@ class Database {
     }
 
     public static function getInstance(): self {
-        if (self::$instance === null) {
-            self::$instance = new self();
-        }
+        if (self::$instance === null) self::$instance = new self();
         return self::$instance;
     }
 
-    public function getPDO(): PDO {
-        return $this->pdo;
-    }
+    public function getPDO(): PDO { return $this->pdo; }
 
     public function query(string $sql, array $params = []): PDOStatement {
         $stmt = $this->pdo->prepare($sql);

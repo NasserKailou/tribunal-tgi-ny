@@ -1,14 +1,17 @@
 <?php
-require_once dirname(__DIR__) . '/app/config/config.php';
-require_once dirname(__DIR__) . '/app/config/database.php';
-require_once dirname(__DIR__) . '/app/core/Router.php';
-require_once dirname(__DIR__) . '/app/core/Controller.php';
-require_once dirname(__DIR__) . '/app/helpers/Auth.php';
-require_once dirname(__DIR__) . '/app/helpers/CSRF.php';
-require_once dirname(__DIR__) . '/app/helpers/Numerotation.php';
-require_once dirname(__DIR__) . '/app/helpers/Alerte.php';
+// ROOT_PATH défini en premier, avant config.php
+if (!defined('ROOT_PATH')) {
+    define('ROOT_PATH', dirname(__DIR__));
+}
 
-define('ROOT_PATH', dirname(__DIR__));
+require_once ROOT_PATH . '/app/config/config.php';
+require_once ROOT_PATH . '/app/config/database.php';
+require_once ROOT_PATH . '/app/core/Router.php';
+require_once ROOT_PATH . '/app/core/Controller.php';
+require_once ROOT_PATH . '/app/helpers/Auth.php';
+require_once ROOT_PATH . '/app/helpers/CSRF.php';
+require_once ROOT_PATH . '/app/helpers/Numerotation.php';
+require_once ROOT_PATH . '/app/helpers/Alerte.php';
 
 // Autoloader
 spl_autoload_register(function (string $class): void {
