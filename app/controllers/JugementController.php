@@ -88,8 +88,8 @@ class JugementController extends Controller {
         $jugId = (int)$this->db->lastInsertId();
 
         $this->db->prepare("UPDATE dossiers SET statut='juge' WHERE id=?")->execute([(int)$_POST['dossier_id']]);
-        $this->db->prepare("INSERT INTO mouvements_dossier (dossier_id,user_id,type_mouvement,nouveau_statut,description) VALUES (?,?,'jugement','juge',:n)")
-            ->execute([(int)$_POST['dossier_id'],Auth::userId(),"Jugement rendu : $numJug"]);
+        $this->db->prepare("INSERT INTO mouvements_dossier (dossier_id,user_id,type_mouvement,nouveau_statut,description) VALUES (?,?,?,?,?)")
+            ->execute([(int)$_POST['dossier_id'],Auth::userId(),'jugement','juge',"Jugement rendu : $numJug"]);
 
         $this->flash('success',"Jugement enregistré : $numJug");
         $this->redirect('/jugements/show/'.$jugId);

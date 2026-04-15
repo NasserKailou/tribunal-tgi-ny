@@ -253,8 +253,8 @@ class PVController extends Controller {
         $dossierId = (int)$this->db->lastInsertId();
 
         // Historique
-        $this->db->prepare("INSERT INTO mouvements_dossier (dossier_id, user_id, type_mouvement, nouveau_statut, description) VALUES (?,?,'creation',:s,:desc)")
-            ->execute([$dossierId, Auth::userId(), $statut, "Dossier créé depuis PV {$pvData['numero_rg']}"]);
+        $this->db->prepare("INSERT INTO mouvements_dossier (dossier_id, user_id, type_mouvement, nouveau_statut, description) VALUES (?,?,?,?,?)")
+            ->execute([$dossierId, Auth::userId(), 'creation', $statut, "Dossier créé depuis PV {$pvData['numero_rg']}"]);
 
         // Mettre à jour le PV
         $pvStatut = ($destination === 'instruction') ? 'transfere_instruction' : 'transfere_jugement_direct';
