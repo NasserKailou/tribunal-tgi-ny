@@ -13,6 +13,7 @@
             <?php if (Auth::hasRole(['admin','greffier','procureur'])): ?>
             <a href="<?= BASE_URL ?>/pv/edit/<?= $pv['id'] ?>" class="btn btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Modifier</a>
             <?php endif; ?>
+            <a href="<?= BASE_URL ?>/export/pv/<?= $pv['id'] ?>" target="_blank" class="btn btn-outline-danger"><i class="bi bi-file-pdf me-1"></i>Imprimer / PDF</a>
         </div>
     </div>
 </div>

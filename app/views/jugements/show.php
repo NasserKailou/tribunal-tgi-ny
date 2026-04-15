@@ -1,7 +1,10 @@
 <?php $pageTitle = 'Jugement — ' . $jugement['numero_jugement']; ?>
 <div class="mb-4 mt-2">
     <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="<?=BASE_URL?>/jugements">Jugements</a></li><li class="breadcrumb-item active"><?=htmlspecialchars($jugement['numero_jugement'])?></li></ol></nav>
-    <h4 class="fw-bold"><i class="bi bi-hammer me-2 text-primary"></i><?=htmlspecialchars($jugement['numero_jugement'])?></h4>
+    <div class="d-flex justify-content-between align-items-center">
+    <h4 class="fw-bold mb-0"><i class="bi bi-hammer me-2 text-primary"></i><?=htmlspecialchars($jugement['numero_jugement'])?></h4>
+    <a href="<?=BASE_URL?>/export/jugement/<?=$jugement['id']?>" target="_blank" class="btn btn-outline-danger"><i class="bi bi-file-pdf me-1"></i>Imprimer / PDF</a>
+    </div>
 </div>
 <div class="row g-4">
 <div class="col-lg-8">

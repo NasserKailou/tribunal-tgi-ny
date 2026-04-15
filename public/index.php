@@ -102,6 +102,11 @@ $router->get('/detenus/stats',        'DetenusController@stats');
 $router->get('/carte',          'CarteController@index');
 $router->get('/api/carte-data', 'CarteController@apiData');
 
+// Exports PDF/Impression
+$router->get('/export/jugement/{id}', 'ExportController@jugement');
+$router->get('/export/pv/{id}',       'ExportController@pv');
+$router->get('/export/dossier/{id}',  'ExportController@dossier');
+
 // Alertes
 $router->get('/alertes',               'AlerteController@index');
 $router->post('/alertes/lire/{id}',    'AlerteController@marquerLue');
