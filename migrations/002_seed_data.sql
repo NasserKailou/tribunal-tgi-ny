@@ -86,16 +86,16 @@ INSERT INTO communes (departement_id, nom, latitude, longitude) VALUES
 
 -- Utilisateurs (mot de passe: Admin@2026)
 INSERT INTO users (role_id, nom, prenom, email, password, matricule) VALUES
-(1, 'SYSTÈME', 'Admin', 'admin@tgi-niamey.ne', '$2y$12$LKpXuMqVJnE3oe4vJFv4fueBUiSFAfxEhc.o6vkOHrFjfB8ZpV4ki', 'SYS-001'),
-(2, 'MAÏGA', 'Ousmane', 'president@tgi-niamey.ne', '$2y$12$LKpXuMqVJnE3oe4vJFv4fueBUiSFAfxEhc.o6vkOHrFjfB8ZpV4ki', 'PRES-001'),
-(4, 'MOUSSA', 'Ibrahim', 'procureur@tgi-niamey.ne', '$2y$12$LKpXuMqVJnE3oe4vJFv4fueBUiSFAfxEhc.o6vkOHrFjfB8ZpV4ki', 'PROC-001'),
-(5, 'ADAMOU', 'Fatouma', 'substitut1@tgi-niamey.ne', '$2y$12$LKpXuMqVJnE3oe4vJFv4fueBUiSFAfxEhc.o6vkOHrFjfB8ZpV4ki', 'SUB-001'),
-(5, 'CHAIBOU', 'Moustapha', 'substitut2@tgi-niamey.ne', '$2y$12$LKpXuMqVJnE3oe4vJFv4fueBUiSFAfxEhc.o6vkOHrFjfB8ZpV4ki', 'SUB-002'),
-(6, 'SAIDOU', 'Aïssatou', 'juge.instr1@tgi-niamey.ne', '$2y$12$LKpXuMqVJnE3oe4vJFv4fueBUiSFAfxEhc.o6vkOHrFjfB8ZpV4ki', 'JI-001'),
-(6, 'HAMIDOU', 'Mariama', 'juge.instr2@tgi-niamey.ne', '$2y$12$LKpXuMqVJnE3oe4vJFv4fueBUiSFAfxEhc.o6vkOHrFjfB8ZpV4ki', 'JI-002'),
-(7, 'YACOUBA', 'Hassane', 'juge.siege@tgi-niamey.ne', '$2y$12$LKpXuMqVJnE3oe4vJFv4fueBUiSFAfxEhc.o6vkOHrFjfB8ZpV4ki', 'JS-001'),
-(8, 'ISSA', 'Rahila', 'greffier@tgi-niamey.ne', '$2y$12$LKpXuMqVJnE3oe4vJFv4fueBUiSFAfxEhc.o6vkOHrFjfB8ZpV4ki', 'GRF-001'),
-(9, 'MAHAMANE', 'Alio', 'avocat@barreau-niamey.ne', '$2y$12$LKpXuMqVJnE3oe4vJFv4fueBUiSFAfxEhc.o6vkOHrFjfB8ZpV4ki', 'AVO-001');
+(1, 'SYSTÈME', 'Admin', 'admin@tgi-niamey.ne', '$2y$12$QOBYKWWfAWXEae1fpkEUFOH/JJvtCOqA0nwH/FKzzSPs.84nmc5Ym', 'SYS-001'),
+(2, 'MAÏGA', 'Ousmane', 'president@tgi-niamey.ne', '$2y$12$QOBYKWWfAWXEae1fpkEUFOH/JJvtCOqA0nwH/FKzzSPs.84nmc5Ym', 'PRES-001'),
+(4, 'MOUSSA', 'Ibrahim', 'procureur@tgi-niamey.ne', '$2y$12$QOBYKWWfAWXEae1fpkEUFOH/JJvtCOqA0nwH/FKzzSPs.84nmc5Ym', 'PROC-001'),
+(5, 'ADAMOU', 'Fatouma', 'substitut1@tgi-niamey.ne', '$2y$12$QOBYKWWfAWXEae1fpkEUFOH/JJvtCOqA0nwH/FKzzSPs.84nmc5Ym', 'SUB-001'),
+(5, 'CHAIBOU', 'Moustapha', 'substitut2@tgi-niamey.ne', '$2y$12$QOBYKWWfAWXEae1fpkEUFOH/JJvtCOqA0nwH/FKzzSPs.84nmc5Ym', 'SUB-002'),
+(6, 'SAIDOU', 'Aïssatou', 'juge.instr1@tgi-niamey.ne', '$2y$12$QOBYKWWfAWXEae1fpkEUFOH/JJvtCOqA0nwH/FKzzSPs.84nmc5Ym', 'JI-001'),
+(6, 'HAMIDOU', 'Mariama', 'juge.instr2@tgi-niamey.ne', '$2y$12$QOBYKWWfAWXEae1fpkEUFOH/JJvtCOqA0nwH/FKzzSPs.84nmc5Ym', 'JI-002'),
+(7, 'YACOUBA', 'Hassane', 'juge.siege@tgi-niamey.ne', '$2y$12$QOBYKWWfAWXEae1fpkEUFOH/JJvtCOqA0nwH/FKzzSPs.84nmc5Ym', 'JS-001'),
+(8, 'ISSA', 'Rahila', 'greffier@tgi-niamey.ne', '$2y$12$QOBYKWWfAWXEae1fpkEUFOH/JJvtCOqA0nwH/FKzzSPs.84nmc5Ym', 'GRF-001'),
+(9, 'MAHAMANE', 'Alio', 'avocat@barreau-niamey.ne', '$2y$12$QOBYKWWfAWXEae1fpkEUFOH/JJvtCOqA0nwH/FKzzSPs.84nmc5Ym', 'AVO-001');
 
 -- Cabinets d'instruction
 INSERT INTO cabinets_instruction (numero, libelle, juge_id) VALUES
