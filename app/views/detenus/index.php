@@ -4,7 +4,9 @@
     <div class="d-flex gap-2">
         <a href="<?= BASE_URL ?>/detenus/stats" class="btn btn-outline-info btn-sm"><i class="bi bi-bar-chart me-1"></i>Statistiques</a>
         <?php if (Auth::hasRole(['admin','greffier','procureur','president'])): ?>
-        <a href="<?= BASE_URL ?>/detenus/create" class="btn btn-danger btn-sm"><i class="bi bi-plus-lg me-1"></i>Enregistrer détenu</a>
+        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#modalNewDetenu">
+            <i class="bi bi-plus-lg me-1"></i>Enregistrer détenu
+        </button>
         <?php endif; ?>
     </div>
 </div>
@@ -88,3 +90,16 @@
         <?php endif; ?>
     </div>
 </div>
+
+<?php if(Auth::hasRole(['admin','greffier','procureur','president'])): ?>
+<?php include ROOT_PATH.DIRECTORY_SEPARATOR.'app'.DIRECTORY_SEPARATOR.'views'.DIRECTORY_SEPARATOR.'detenus'.DIRECTORY_SEPARATOR.'create.php'; ?>
+<?php endif; ?>
+
+<?php if(!empty($_GET['open_modal'])): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var modalEl = document.getElementById('modalNewDetenu');
+    if (modalEl) { new bootstrap.Modal(modalEl).show(); }
+});
+</script>
+<?php endif; ?>

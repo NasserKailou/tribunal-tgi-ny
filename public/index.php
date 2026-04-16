@@ -100,10 +100,12 @@ $router->get('/detenus/edit/{id}',    'DetenusController@edit');
 $router->post('/detenus/update/{id}', 'DetenusController@update');
 $router->post('/detenus/liberer/{id}','DetenusController@liberer');
 $router->get('/detenus/stats',        'DetenusController@stats');
+$router->get('/api/detenus/search',   'DetenusController@apiSearch');
 
 // Carte antiterroriste
 $router->get('/carte',          'CarteController@index');
 $router->get('/api/carte-data', 'CarteController@apiData');
+$router->get('/carte/data',     'CarteController@apiData');
 
 // Exports PDF/Impression
 $router->get('/export/jugement/{id}', 'ExportController@jugement');
@@ -116,6 +118,12 @@ $router->post('/alertes/lire/{id}',    'AlerteController@marquerLue');
 $router->post('/alertes/lire-tout',    'AlerteController@marquerToutLu');
 $router->get('/api/alertes-count',     'AlerteController@apiCount');
 
+// Documents / Pièces jointes
+$router->post('/documents/upload/{dossierId}',  'DocumentController@upload');
+$router->post('/documents/delete/{id}',          'DocumentController@delete');
+$router->get('/documents/view/{id}',             'DocumentController@view');
+$router->get('/documents/list/{dossierId}',      'DocumentController@list');
+
 // Utilisateurs (admin)
 $router->get('/users',               'UserController@index');
 $router->get('/users/create',        'UserController@create');
@@ -123,5 +131,43 @@ $router->post('/users/store',        'UserController@store');
 $router->get('/users/edit/{id}',     'UserController@edit');
 $router->post('/users/update/{id}',  'UserController@update');
 $router->post('/users/toggle/{id}',  'UserController@toggle');
+
+// Configuration (admin / procureur)
+$router->get('/config',                                  'ConfigController@index');
+
+$router->get('/config/cabinets',                         'ConfigController@cabinets');
+$router->post('/config/cabinets/store',                  'ConfigController@cabinetStore');
+$router->post('/config/cabinets/update/{id}',            'ConfigController@cabinetUpdate');
+$router->post('/config/cabinets/delete/{id}',            'ConfigController@cabinetDelete');
+
+$router->get('/config/primo-intervenants',               'ConfigController@primoIntervenants');
+$router->post('/config/primo-intervenants/store',        'ConfigController@primoIntervenantStore');
+$router->post('/config/primo-intervenants/update/{id}',  'ConfigController@primoIntervenantUpdate');
+$router->post('/config/primo-intervenants/delete/{id}',  'ConfigController@primoIntervenantDelete');
+
+$router->get('/config/unites-enquete',                   'ConfigController@unitesEnquete');
+$router->post('/config/unites-enquete/store',            'ConfigController@uniteEnqueteStore');
+$router->post('/config/unites-enquete/update/{id}',      'ConfigController@uniteEnqueteUpdate');
+$router->post('/config/unites-enquete/delete/{id}',      'ConfigController@uniteEnqueteDelete');
+
+$router->get('/config/substituts',                       'ConfigController@substituts');
+$router->post('/config/substituts/store',                'ConfigController@substitutStore');
+$router->post('/config/substituts/update/{id}',          'ConfigController@substitutUpdate');
+$router->post('/config/substituts/delete/{id}',          'ConfigController@substitutDelete');
+
+$router->get('/config/infractions',                      'ConfigController@infractions');
+$router->post('/config/infractions/store',               'ConfigController@infractionStore');
+$router->post('/config/infractions/update/{id}',         'ConfigController@infractionUpdate');
+$router->post('/config/infractions/delete/{id}',         'ConfigController@infractionDelete');
+
+$router->get('/config/maisons-arret',                    'ConfigController@maisonsArret');
+$router->post('/config/maisons-arret/store',             'ConfigController@maisonArretStore');
+$router->post('/config/maisons-arret/update/{id}',       'ConfigController@maisonArretUpdate');
+$router->post('/config/maisons-arret/delete/{id}',       'ConfigController@maisonArretDelete');
+
+$router->get('/config/salles-audience',                  'ConfigController@sallesAudience');
+$router->post('/config/salles-audience/store',           'ConfigController@salleAudienceStore');
+$router->post('/config/salles-audience/update/{id}',     'ConfigController@salleAudienceUpdate');
+$router->post('/config/salles-audience/delete/{id}',     'ConfigController@salleAudienceDelete');
 
 $router->dispatch();

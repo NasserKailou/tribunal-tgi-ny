@@ -31,47 +31,73 @@ class DetenusController extends Controller {
         $statsPopulation=$statsStmt->fetchAll(PDO::FETCH_KEY_PAIR);
         $totalIncarceres=(int)$this->db->query("SELECT COUNT(*) FROM detenus WHERE statut='incarcere'")->fetchColumn();
 
-        $this->view('detenus/index',compact('detenus','total','page','perPage','totalPages','search','type','statut','statsPopulation','totalIncarceres','flash','user'));
+        $maisonArrets  = $this->getMaisonsArret();
+        $suggestEcrou  = (new Numerotation($this->db))->genererEcrou();
+        $dossiers      = $this->db->query("SELECT id,numero_rg,objet FROM dossiers WHERE statut NOT IN ('classe') ORDER BY numero_rg")->fetchAll();
+        $this->view('detenus/index',compact('detenus','total','page','perPage','totalPages','search','type','statut','statsPopulation','totalIncarceres','flash','user','maisonArrets','suggestEcrou','dossiers'));
     }
 
     public function create(): void {
         Auth::requireLogin();
         Auth::requireRole(['admin','greffier','procureur','president']);
-        $user     = Auth::currentUser();
-        $dossiers = $this->db->query("SELECT id,numero_rg,objet FROM dossiers WHERE statut NOT IN ('classe') ORDER BY numero_rg")->fetchAll();
-        $num      = new Numerotation($this->db);
-        $suggestEcrou = $num->genererEcrou();
-        $this->view('detenus/create',compact('dossiers','suggestEcrou','user'));
+        // Redirige vers la liste avec ouverture auto du modal
+        $dossier_id = (int)($_GET['dossier_id'] ?? 0);
+        $url = '/detenus?open_modal=1' . ($dossier_id ? '&dossier_id=' . $dossier_id : '');
+        $this->redirect($url);
     }
 
     public function store(): void {
         Auth::requireLogin();
         CSRF::check();
+        Auth::requireRole(['admin','greffier','procureur','president']);
         $num = new Numerotation($this->db);
         $ecrou = $num->genererEcrou();
 
+        // Traitement upload photo
+        $photoPath = null;
+        if (!empty($_FILES['photo_identite']['tmp_name'])) {
+            $photoPath = $this->handlePhotoUpload($_FILES['photo_identite']);
+            if ($photoPath === false) {
+                $this->flash('error','Photo invalide : format JPG/PNG requis, taille max 2 Mo.');
+                $this->redirect('/detenus/create');
+                return;
+            }
+        }
+
         $this->db->prepare(
-            "INSERT INTO detenus (dossier_id,jugement_id,nom,prenom,date_naissance,lieu_naissance,
-             nationalite,profession,numero_ecrou,type_detention,date_incarceration,
-             date_liberation_prevue,statut,cellule,etablissement,notes)
-             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+            "INSERT INTO detenus (dossier_id, jugement_id, nom, prenom, surnom_alias, nom_mere,
+             statut_matrimonial, nombre_enfants, sexe, date_naissance, lieu_naissance,
+             nationalite, profession, numero_ecrou, type_detention, date_incarceration,
+             date_liberation_prevue, statut, cellule, etablissement, maison_arret_id,
+             photo_identite, notes)
+             VALUES (:dossier_id, :jugement_id, :nom, :prenom, :surnom_alias, :nom_mere,
+             :statut_matrimonial, :nombre_enfants, :sexe, :date_naissance, :lieu_naissance,
+             :nationalite, :profession, :numero_ecrou, :type_detention, :date_incarceration,
+             :date_liberation_prevue, 'incarcere', :cellule, :etablissement, :maison_arret_id,
+             :photo_identite, :notes)"
         )->execute([
-            $_POST['dossier_id']?:null,
-            $_POST['jugement_id']?:null,
-            $this->sanitize($_POST['nom']),
-            $this->sanitize($_POST['prenom']),
-            $_POST['date_naissance']?:null,
-            $this->sanitize($_POST['lieu_naissance']??''),
-            $this->sanitize($_POST['nationalite']??'Nigérienne'),
-            $this->sanitize($_POST['profession']??''),
-            $ecrou,
-            $_POST['type_detention'],
-            $_POST['date_incarceration'],
-            $_POST['date_liberation_prevue']?:null,
-            'incarcere',
-            $this->sanitize($_POST['cellule']??''),
-            $this->sanitize($_POST['etablissement']??'Maison d\'Arrêt de Niamey'),
-            $this->sanitize($_POST['notes']??''),
+            ':dossier_id'         => $_POST['dossier_id'] ?: null,
+            ':jugement_id'        => $_POST['jugement_id'] ?? null ?: null,
+            ':nom'                => $this->sanitize($_POST['nom']),
+            ':prenom'             => $this->sanitize($_POST['prenom']),
+            ':surnom_alias'       => $this->sanitize($_POST['surnom_alias'] ?? '') ?: null,
+            ':nom_mere'           => $this->sanitize($_POST['nom_mere'] ?? '') ?: null,
+            ':statut_matrimonial' => $_POST['statut_matrimonial'] ?? 'celibataire',
+            ':nombre_enfants'     => (int)($_POST['nombre_enfants'] ?? 0),
+            ':sexe'               => $_POST['sexe'] === 'F' ? 'F' : 'M',
+            ':date_naissance'     => $_POST['date_naissance'] ?: null,
+            ':lieu_naissance'     => $this->sanitize($_POST['lieu_naissance'] ?? ''),
+            ':nationalite'        => $this->sanitize($_POST['nationalite'] ?? 'Nigérienne'),
+            ':profession'         => $this->sanitize($_POST['profession'] ?? ''),
+            ':numero_ecrou'       => $ecrou,
+            ':type_detention'     => $_POST['type_detention'],
+            ':date_incarceration' => $_POST['date_incarceration'],
+            ':date_liberation_prevue' => $_POST['date_liberation_prevue'] ?: null,
+            ':cellule'            => $this->sanitize($_POST['cellule'] ?? ''),
+            ':etablissement'      => $this->sanitize($_POST['etablissement'] ?? 'Maison d\'Arrêt de Niamey'),
+            ':maison_arret_id'    => $_POST['maison_arret_id'] ?: null,
+            ':photo_identite'     => $photoPath,
+            ':notes'              => $this->sanitize($_POST['notes'] ?? ''),
         ]);
         $this->flash('success',"Détenu enregistré — Écrou : $ecrou");
         $this->redirect('/detenus');
@@ -79,8 +105,16 @@ class DetenusController extends Controller {
 
     public function show(string $id): void {
         Auth::requireLogin();
-        $stmt=$this->db->prepare("SELECT d.*,dos.numero_rg,j.numero_jugement FROM detenus d LEFT JOIN dossiers dos ON d.dossier_id=dos.id LEFT JOIN jugements j ON d.jugement_id=j.id WHERE d.id=?");
-        $stmt->execute([(int)$id]);
+        $stmt=$this->db->prepare(
+            "SELECT d.*, dos.numero_rg, j.numero_jugement,
+                    ma.nom AS maison_arret_nom, ma.id AS maison_arret_real_id
+             FROM detenus d
+             LEFT JOIN dossiers dos ON d.dossier_id=dos.id
+             LEFT JOIN jugements j ON d.jugement_id=j.id
+             LEFT JOIN maisons_arret ma ON d.maison_arret_id=ma.id
+             WHERE d.id=:id"
+        );
+        $stmt->execute([':id' => (int)$id]);
         $detenu=$stmt->fetch();
         if(!$detenu){$this->redirect('/detenus');}
         $flash=$this->getFlash();
@@ -90,28 +124,73 @@ class DetenusController extends Controller {
 
     public function edit(string $id): void {
         Auth::requireLogin();
-        $stmt=$this->db->prepare("SELECT * FROM detenus WHERE id=?");
-        $stmt->execute([(int)$id]);
+        Auth::requireRole(['admin','greffier','procureur','president']);
+        $stmt=$this->db->prepare("SELECT * FROM detenus WHERE id=:id");
+        $stmt->execute([':id' => (int)$id]);
         $detenu=$stmt->fetch();
         if(!$detenu){$this->redirect('/detenus');}
         $user=Auth::currentUser();
         $dossiers=$this->db->query("SELECT id,numero_rg FROM dossiers ORDER BY numero_rg")->fetchAll();
-        $this->view('detenus/edit',compact('detenu','dossiers','user'));
+        $maisonArrets=$this->getMaisonsArret();
+        $this->view('detenus/edit',compact('detenu','dossiers','user','maisonArrets'));
     }
 
     public function update(string $id): void {
         Auth::requireLogin();
         CSRF::check();
-        $this->db->prepare("UPDATE detenus SET nom=?,prenom=?,type_detention=?,cellule=?,etablissement=?,notes=? WHERE id=?")
-            ->execute([
-                $this->sanitize($_POST['nom']),
-                $this->sanitize($_POST['prenom']),
-                $_POST['type_detention'],
-                $this->sanitize($_POST['cellule']??''),
-                $this->sanitize($_POST['etablissement']??''),
-                $this->sanitize($_POST['notes']??''),
-                (int)$id,
-            ]);
+        Auth::requireRole(['admin','greffier','procureur','president']);
+
+        // Récupérer la photo existante
+        $stmtEx = $this->db->prepare("SELECT photo_identite FROM detenus WHERE id=:id");
+        $stmtEx->execute([':id' => (int)$id]);
+        $existing = $stmtEx->fetch();
+        $photoPath = $existing['photo_identite'] ?? null;
+
+        // Traitement upload photo
+        if (!empty($_FILES['photo_identite']['tmp_name'])) {
+            $newPhoto = $this->handlePhotoUpload($_FILES['photo_identite']);
+            if ($newPhoto === false) {
+                $this->flash('error','Photo invalide : format JPG/PNG requis, taille max 2 Mo.');
+                $this->redirect('/detenus/edit/'.$id);
+                return;
+            }
+            // Supprimer ancienne photo si elle existe
+            if ($photoPath) {
+                $oldFile = ROOT_PATH . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, ltrim($photoPath, '/'));
+                if (file_exists($oldFile)) { @unlink($oldFile); }
+            }
+            $photoPath = $newPhoto;
+        }
+
+        $this->db->prepare(
+            "UPDATE detenus SET
+                nom=:nom, prenom=:prenom, surnom_alias=:surnom_alias, nom_mere=:nom_mere,
+                statut_matrimonial=:statut_matrimonial, nombre_enfants=:nombre_enfants,
+                sexe=:sexe, date_naissance=:date_naissance, lieu_naissance=:lieu_naissance,
+                nationalite=:nationalite, profession=:profession,
+                type_detention=:type_detention, cellule=:cellule, etablissement=:etablissement,
+                maison_arret_id=:maison_arret_id, photo_identite=:photo_identite, notes=:notes
+             WHERE id=:id"
+        )->execute([
+            ':nom'                => $this->sanitize($_POST['nom']),
+            ':prenom'             => $this->sanitize($_POST['prenom']),
+            ':surnom_alias'       => $this->sanitize($_POST['surnom_alias'] ?? '') ?: null,
+            ':nom_mere'           => $this->sanitize($_POST['nom_mere'] ?? '') ?: null,
+            ':statut_matrimonial' => $_POST['statut_matrimonial'] ?? 'celibataire',
+            ':nombre_enfants'     => (int)($_POST['nombre_enfants'] ?? 0),
+            ':sexe'               => $_POST['sexe'] === 'F' ? 'F' : 'M',
+            ':date_naissance'     => $_POST['date_naissance'] ?: null,
+            ':lieu_naissance'     => $this->sanitize($_POST['lieu_naissance'] ?? ''),
+            ':nationalite'        => $this->sanitize($_POST['nationalite'] ?? 'Nigérienne'),
+            ':profession'         => $this->sanitize($_POST['profession'] ?? ''),
+            ':type_detention'     => $_POST['type_detention'],
+            ':cellule'            => $this->sanitize($_POST['cellule'] ?? ''),
+            ':etablissement'      => $this->sanitize($_POST['etablissement'] ?? ''),
+            ':maison_arret_id'    => $_POST['maison_arret_id'] ?: null,
+            ':photo_identite'     => $photoPath,
+            ':notes'              => $this->sanitize($_POST['notes'] ?? ''),
+            ':id'                 => (int)$id,
+        ]);
         $this->flash('success','Détenu mis à jour.');
         $this->redirect('/detenus/show/'.$id);
     }
@@ -121,7 +200,8 @@ class DetenusController extends Controller {
         CSRF::check();
         Auth::requireRole(['admin','greffier','president','procureur']);
         $dateLib = $_POST['date_liberation_effective'] ?? date('Y-m-d');
-        $this->db->prepare("UPDATE detenus SET statut='libere', date_liberation_effective=? WHERE id=?")->execute([$dateLib,(int)$id]);
+        $this->db->prepare("UPDATE detenus SET statut='libere', date_liberation_effective=:dl WHERE id=:id")
+            ->execute([':dl' => $dateLib, ':id' => (int)$id]);
         $this->flash('success','Libération enregistrée.');
         $this->redirect('/detenus/show/'.$id);
     }
@@ -135,5 +215,82 @@ class DetenusController extends Controller {
         $longDetention = $this->db->query("SELECT d.*, dos.numero_rg, TIMESTAMPDIFF(MONTH,d.date_incarceration,NOW()) as duree_mois FROM detenus d LEFT JOIN dossiers dos ON d.dossier_id=dos.id WHERE d.statut='incarcere' AND d.type_detention IN ('prevenu','detenu_provisoire','inculpe') AND TIMESTAMPDIFF(MONTH,d.date_incarceration,NOW()) > 6 ORDER BY d.date_incarceration")->fetchAll();
 
         $this->view('detenus/stats',compact('byType','byMonthIncarc','longDetention','user'));
+    }
+
+    /**
+     * API : recherche de détenus pour import dans les parties de dossier
+     * GET /api/detenus/search?q=...
+     */
+    public function apiSearch(): void {
+        Auth::requireLogin();
+        $q = trim($_GET['q'] ?? '');
+        header('Content-Type: application/json; charset=utf-8');
+        if (strlen($q) < 2) {
+            echo json_encode([]);
+            return;
+        }
+        $stmt = $this->db->prepare(
+            "SELECT id, nom, prenom, nationalite,
+                    COALESCE(
+                        (SELECT CONCAT(ma2.nom) FROM maisons_arret ma2 WHERE ma2.id=detenus.maison_arret_id),
+                        etablissement
+                    ) AS adresse_detention,
+                    numero_ecrou, date_incarceration
+             FROM detenus
+             WHERE (nom LIKE :q OR prenom LIKE :q OR numero_ecrou LIKE :q)
+               AND statut='incarcere'
+             ORDER BY nom, prenom
+             LIMIT 30"
+        );
+        $stmt->execute([':q' => "%$q%"]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        echo json_encode($rows);
+    }
+
+    // ─── Méthodes privées ────────────────────────────────────────────
+
+    /**
+     * Retourne la liste des maisons d'arrêt actives.
+     */
+    private function getMaisonsArret(): array {
+        try {
+            return $this->db->query("SELECT id, nom FROM maisons_arret WHERE actif=1 ORDER BY nom")->fetchAll();
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Traite l'upload de la photo d'identité.
+     * Retourne le chemin relatif stocké en base, ou false en cas d'erreur.
+     */
+    private function handlePhotoUpload(array $file): string|false {
+        $allowedMimes = ['image/jpeg', 'image/jpg', 'image/png'];
+        $maxSize      = 2 * 1024 * 1024; // 2 Mo
+
+        if ($file['error'] !== UPLOAD_ERR_OK) { return false; }
+        if ($file['size'] > $maxSize) { return false; }
+
+        // Vérification MIME réelle (finfo)
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime  = $finfo->file($file['tmp_name']);
+        if (!in_array($mime, $allowedMimes, true)) { return false; }
+
+        // Dossier de destination
+        $uploadDir = ROOT_PATH . DIRECTORY_SEPARATOR . 'public'
+                   . DIRECTORY_SEPARATOR . 'uploads'
+                   . DIRECTORY_SEPARATOR . 'photos_detenus';
+
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        $ext      = $mime === 'image/png' ? 'png' : 'jpg';
+        $filename = 'det_' . bin2hex(random_bytes(8)) . '_' . time() . '.' . $ext;
+        $dest     = $uploadDir . DIRECTORY_SEPARATOR . $filename;
+
+        if (!move_uploaded_file($file['tmp_name'], $dest)) { return false; }
+
+        return 'uploads/photos_detenus/' . $filename;
     }
 }

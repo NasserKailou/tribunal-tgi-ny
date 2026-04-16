@@ -70,6 +70,11 @@ function isActive(string $prefix, string $currentPath): string {
             <i class="bi bi-people"></i> Utilisateurs
         </a>
         <?php endif; ?>
+        <?php if (Auth::hasRole(['admin','procureur'])): ?>
+        <a href="<?= BASE_URL ?>/config" class="sidebar-link <?= isActive('/config', $currentPath) ?>">
+            <i class="bi bi-gear-fill"></i> ⚙ Configuration
+        </a>
+        <?php endif; ?>
     </nav>
 </div>
 

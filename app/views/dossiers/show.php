@@ -24,6 +24,7 @@
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabAudiences">Audiences (<?=count($audiences)?>)</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabJugements">Jugements (<?=count($jugements)?>)</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabDetenus">Détenus (<?=count($detenus)?>)</a></li>
+    <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabPieces"><i class="bi bi-paperclip"></i> Pièces jointes</a></li>
     <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabHistorique">Historique</a></li>
 </ul>
 
@@ -93,7 +94,15 @@
     <!-- Parties -->
     <div class="tab-pane fade" id="tabParties">
         <?php if(Auth::canEditDossier()): ?>
-        <button class="btn btn-outline-primary btn-sm mb-3" data-bs-toggle="modal" data-bs-target="#modalAddPartie"><i class="bi bi-person-plus me-1"></i>Ajouter une partie</button>
+        <div class="d-flex gap-2 mb-3">
+            <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAddPartie">
+                <i class="bi bi-person-plus me-1"></i>Ajouter une partie
+            </button>
+            <button class="btn btn-outline-danger btn-sm" id="btnImportDetenu"
+                    data-bs-toggle="modal" data-bs-target="#modalImportDetenu">
+                <i class="bi bi-person-lock me-1"></i>Importer depuis les détenus
+            </button>
+        </div>
         <?php endif; ?>
         <?php if(empty($parties)): ?><div class="text-center text-muted py-4">Aucune partie enregistrée</div>
         <?php else: ?>
@@ -169,6 +178,25 @@
         <?php endif; ?>
     </div>
 
+    <!-- Pièces jointes -->
+    <div class="tab-pane fade" id="tabPieces">
+        <!-- Section pièces jointes -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span class="fw-semibold"><i class="bi bi-paperclip me-2"></i>Pièces jointes</span>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalUpload">
+                    <i class="bi bi-plus-lg me-1"></i>Ajouter
+                </button>
+            </div>
+            <div class="card-body" id="piecesList">
+                <div class="text-center text-muted py-4">
+                    <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                    Chargement…
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Historique -->
     <div class="tab-pane fade" id="tabHistorique">
         <?php if(empty($mouvements)): ?><div class="text-center text-muted py-4">Aucun mouvement enregistré</div>
@@ -217,15 +245,495 @@
             <?=CSRF::field()?>
             <div class="modal-body row g-3">
                 <div class="col-md-6"><label class="form-label">Type <span class="text-danger">*</span></label>
-                    <select name="type_partie" class="form-select" required><option value="plaignant">Plaignant</option><option value="defendeur">Défendeur</option><option value="prevenu">Prévenu</option><option value="victime">Victime</option><option value="avocat">Avocat</option><option value="temoin">Témoin</option><option value="mis_en_cause">Mis en cause</option></select>
+                    <select name="type_partie" id="selectTypePartie" class="form-select" required>
+                        <option value="plaignant">Plaignant</option>
+                        <option value="defendeur">Défendeur</option>
+                        <option value="prevenu">Prévenu</option>
+                        <option value="victime">Victime</option>
+                        <option value="avocat">Avocat</option>
+                        <option value="temoin">Témoin</option>
+                        <option value="mis_en_cause">Mis en cause</option>
+                    </select>
                 </div>
-                <div class="col-md-6"><label class="form-label">Nom <span class="text-danger">*</span></label><input type="text" name="nom" class="form-control" required></div>
-                <div class="col-md-6"><label class="form-label">Prénom</label><input type="text" name="prenom" class="form-control"></div>
-                <div class="col-md-6"><label class="form-label">Téléphone</label><input type="text" name="telephone" class="form-control"></div>
-                <div class="col-md-6"><label class="form-label">Nationalité</label><input type="text" name="nationalite" class="form-control" value="Nigérienne"></div>
-                <div class="col-md-6"><label class="form-label">Profession</label><input type="text" name="profession" class="form-control"></div>
+                <div class="col-md-6"><label class="form-label">Nom <span class="text-danger">*</span></label>
+                    <input type="text" id="partieNom" name="nom" class="form-control" required>
+                </div>
+                <div class="col-md-6"><label class="form-label">Prénom</label>
+                    <input type="text" id="partiePrenom" name="prenom" class="form-control">
+                </div>
+                <div class="col-md-6"><label class="form-label">Téléphone</label>
+                    <input type="text" name="telephone" class="form-control">
+                </div>
+                <div class="col-md-6"><label class="form-label">Nationalité</label>
+                    <input type="text" id="partieNationalite" name="nationalite" class="form-control" value="Nigérienne">
+                </div>
+                <div class="col-md-6"><label class="form-label">Profession</label>
+                    <input type="text" name="profession" class="form-control">
+                </div>
+                <div class="col-12"><label class="form-label">Adresse</label>
+                    <textarea id="partieAdresse" name="adresse" class="form-control" rows="2"></textarea>
+                </div>
             </div>
             <div class="modal-footer"><button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Annuler</button><button class="btn btn-primary" type="submit">Ajouter</button></div>
         </form>
     </div></div>
 </div>
+
+<!-- Modal Import depuis Détenus -->
+<div class="modal fade" id="modalImportDetenu" tabindex="-1" aria-labelledby="modalImportDetenuLabel">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalImportDetenuLabel">
+                    <i class="bi bi-person-lock me-2"></i>Importer depuis les détenus
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info alert-sm py-2 small mb-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Les avocats ne peuvent pas être importés depuis les détenus.
+                    Sélectionnez un détenu pour pré-remplir le formulaire d'ajout de partie.
+                </div>
+                <div class="mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" id="searchDetenusInput"
+                               class="form-control"
+                               placeholder="Rechercher par nom, prénom ou n° écrou..."
+                               autocomplete="off">
+                    </div>
+                </div>
+                <div id="searchDetenusResults">
+                    <div class="text-center text-muted py-4 small">
+                        <i class="bi bi-search me-1"></i>Tapez au moins 2 caractères pour rechercher
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================
+     Modal Upload Pièces jointes
+================================================================ -->
+<div class="modal fade" id="modalUpload" tabindex="-1" aria-labelledby="modalUploadLabel">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalUploadLabel">
+                    <i class="bi bi-upload me-2"></i>Ajouter une pièce jointe
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label" for="uploadFichier">
+                        Fichier <span class="text-danger">*</span>
+                        <small class="text-muted">(PDF, DOC, DOCX, JPG, PNG, XLSX, XLS, ODT — 10 Mo max)</small>
+                    </label>
+                    <input type="file" class="form-control" id="uploadFichier"
+                           accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.odt">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="uploadDesc">Description (optionnelle)</label>
+                    <input type="text" class="form-control" id="uploadDesc" maxlength="255"
+                           placeholder="Ex : Acte de naissance, Rapport d’expertise…">
+                </div>
+                <!-- Barre de progression -->
+                <div id="uploadProgressWrap" class="d-none">
+                    <div class="progress" style="height:20px">
+                        <div id="uploadProgressBar"
+                             class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                             role="progressbar" style="width:0%">0&nbsp;%</div>
+                    </div>
+                    <div id="uploadProgressMsg" class="small text-muted mt-1">Upload en cours…</div>
+                </div>
+                <!-- Message résultat -->
+                <div id="uploadResult" class="d-none mt-2"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="btnUploadSubmit">
+                    <i class="bi bi-upload me-1"></i>Envoyer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================
+     Modal Visualisation (iframe pour PDF/images, download pour le reste)
+================================================================ -->
+<div class="modal fade" id="modalView" tabindex="-1" aria-labelledby="modalViewLabel">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content" style="height:90vh">
+            <div class="modal-header py-2">
+                <h6 class="modal-title mb-0" id="modalViewLabel">
+                    <i class="bi bi-eye me-2"></i><span id="modalViewTitle">Document</span>
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" style="overflow:hidden;flex:1">
+                <iframe id="viewerFrame"
+                        src="about:blank"
+                        style="width:100%;height:100%;border:none;display:block"
+                        allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================================================================
+     JavaScript — Pièces jointes
+================================================================ -->
+<script>
+(function () {
+    'use strict';
+
+    const DOSSIER_ID  = <?= (int)$dossier['id'] ?>;
+    const BASE_URL    = '<?= BASE_URL ?>';
+    const CSRF_TOKEN  = '<?= htmlspecialchars(CSRF::generate(), ENT_QUOTES) ?>';
+
+    /* ----------------------------------------------------------
+     * Icônes selon MIME
+     * ---------------------------------------------------------- */
+    function iconeType(mime) {
+        if (!mime) return 'bi-file-earmark';
+        if (mime === 'application/pdf')   return 'bi-file-earmark-pdf text-danger';
+        if (mime.startsWith('image/'))    return 'bi-file-earmark-image text-success';
+        if (mime.includes('word') || mime.includes('odt')) return 'bi-file-earmark-word text-primary';
+        if (mime.includes('excel') || mime.includes('spreadsheet')) return 'bi-file-earmark-excel text-success';
+        return 'bi-file-earmark text-secondary';
+    }
+
+    /* ----------------------------------------------------------
+     * Rendu de la liste
+     * ---------------------------------------------------------- */
+    function renderListe(docs) {
+        const el = document.getElementById('piecesList');
+        if (!docs || docs.length === 0) {
+            el.innerHTML = '<div class="text-center text-muted py-4"><i class="bi bi-inbox fs-3"></i><br>Aucune pièce jointe</div>';
+            return;
+        }
+        let html = '<div class="list-group list-group-flush">';
+        docs.forEach(function (d) {
+            const icone = iconeType(d.type);
+            const inline = d.inline;
+            html += `
+                <div class="list-group-item list-group-item-action d-flex align-items-center gap-3 py-2" id="piece-${d.id}">
+                    <i class="bi ${icone} fs-4"></i>
+                    <div class="flex-fill overflow-hidden">
+                        <div class="fw-semibold text-truncate" title="${d.nom}">${escHtml(d.nom)}</div>
+                        <small class="text-muted">${d.taille} &bull; ${d.date}${d.uploaded_by ? ' &bull; ' + escHtml(d.uploaded_by) : ''}${d.description ? ' &bull; ' + escHtml(d.description) : ''}</small>
+                    </div>
+                    <div class="d-flex gap-2 flex-shrink-0">
+                        <button class="btn btn-sm btn-outline-primary"
+                                onclick="voirDoc(${d.id}, ${JSON.stringify(d.nom)}, ${JSON.stringify(d.url)}, ${inline ? 'true' : 'false'})">
+                            <i class="bi bi-eye"></i> Voir
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger"
+                                onclick="supprimerDoc(${d.id})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>`;
+        });
+        html += '</div>';
+        el.innerHTML = html;
+    }
+
+    /* ----------------------------------------------------------
+     * Échappement HTML
+     * ---------------------------------------------------------- */
+    function escHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    /* ----------------------------------------------------------
+     * Chargement de la liste (AJAX)
+     * ---------------------------------------------------------- */
+    function chargerListe() {
+        const el = document.getElementById('piecesList');
+        el.innerHTML = '<div class="text-center text-muted py-3"><span class="spinner-border spinner-border-sm"></span> Chargement…</div>';
+        fetch(BASE_URL + '/documents/list/' + DOSSIER_ID, {
+            credentials: 'same-origin'
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success) {
+                renderListe(data.data);
+            } else {
+                el.innerHTML = '<div class="alert alert-warning">' + escHtml(data.message) + '</div>';
+            }
+        })
+        .catch(function () {
+            el.innerHTML = '<div class="alert alert-danger">Erreur de chargement.</div>';
+        });
+    }
+
+    /* ----------------------------------------------------------
+     * Voir un document
+     * ---------------------------------------------------------- */
+    window.voirDoc = function (id, nom, url, inline) {
+        if (inline) {
+            // Ouvre le modal avec iframe
+            document.getElementById('modalViewTitle').textContent = nom;
+            document.getElementById('viewerFrame').src = url;
+            var modal = new bootstrap.Modal(document.getElementById('modalView'));
+            modal.show();
+        } else {
+            // Téléchargement direct
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = nom;
+            a.click();
+        }
+    };
+
+    // Vider l'iframe quand on ferme le modal (évite de garder le PDF en mémoire)
+    document.getElementById('modalView').addEventListener('hide.bs.modal', function () {
+        document.getElementById('viewerFrame').src = 'about:blank';
+    });
+
+    /* ----------------------------------------------------------
+     * Supprimer un document
+     * ---------------------------------------------------------- */
+    window.supprimerDoc = function (id) {
+        if (!confirm('Confirmer la suppression de ce document ?')) return;
+        fetch(BASE_URL + '/documents/delete/' + id, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: '_csrf=' + encodeURIComponent(CSRF_TOKEN)
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            if (data.success) {
+                var el = document.getElementById('piece-' + id);
+                if (el) el.remove();
+                // Si plus aucun élément
+                var list = document.getElementById('piecesList');
+                if (!list.querySelector('[id^="piece-"]')) chargerListe();
+            } else {
+                alert('Erreur : ' + (data.message || 'Impossible de supprimer.'));
+            }
+        })
+        .catch(function () { alert('Erreur réseau.'); });
+    };
+
+    /* ----------------------------------------------------------
+     * Upload avec progression
+     * ---------------------------------------------------------- */
+    document.getElementById('btnUploadSubmit').addEventListener('click', function () {
+        var fichier = document.getElementById('uploadFichier').files[0];
+        if (!fichier) {
+            alert('Veuillez sélectionner un fichier.');
+            return;
+        }
+
+        var desc = document.getElementById('uploadDesc').value;
+        var fd   = new FormData();
+        fd.append('fichier', fichier);
+        fd.append('description', desc);
+        fd.append('_csrf', CSRF_TOKEN);
+
+        var progressWrap = document.getElementById('uploadProgressWrap');
+        var progressBar  = document.getElementById('uploadProgressBar');
+        var progressMsg  = document.getElementById('uploadProgressMsg');
+        var resultEl     = document.getElementById('uploadResult');
+        var btn          = document.getElementById('btnUploadSubmit');
+
+        progressWrap.classList.remove('d-none');
+        resultEl.classList.add('d-none');
+        resultEl.innerHTML = '';
+        btn.disabled = true;
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', BASE_URL + '/documents/upload/' + DOSSIER_ID);
+        xhr.withCredentials = true;
+
+        xhr.upload.addEventListener('progress', function (e) {
+            if (e.lengthComputable) {
+                var pct = Math.round((e.loaded / e.total) * 100);
+                progressBar.style.width = pct + '%';
+                progressBar.textContent = pct + '\u00a0%';
+                progressMsg.textContent = 'Upload en cours\u2026 ' + pct + ' %';
+            }
+        });
+
+        xhr.addEventListener('load', function () {
+            btn.disabled = false;
+            progressWrap.classList.add('d-none');
+            try {
+                var data = JSON.parse(xhr.responseText);
+                if (data.success) {
+                    resultEl.className = 'alert alert-success mt-2';
+                    resultEl.textContent = data.message;
+                    resultEl.classList.remove('d-none');
+                    // Reset form
+                    document.getElementById('uploadFichier').value = '';
+                    document.getElementById('uploadDesc').value    = '';
+                    // Recharger la liste
+                    chargerListe();
+                    // Fermer le modal après 1,5 s
+                    setTimeout(function () {
+                        bootstrap.Modal.getInstance(document.getElementById('modalUpload')).hide();
+                        resultEl.classList.add('d-none');
+                    }, 1500);
+                } else {
+                    resultEl.className = 'alert alert-danger mt-2';
+                    resultEl.textContent = data.message || 'Erreur inconnue.';
+                    resultEl.classList.remove('d-none');
+                }
+            } catch (e) {
+                resultEl.className = 'alert alert-danger mt-2';
+                resultEl.textContent = 'Réponse serveur invalide.';
+                resultEl.classList.remove('d-none');
+            }
+        });
+
+        xhr.addEventListener('error', function () {
+            btn.disabled = false;
+            progressWrap.classList.add('d-none');
+            resultEl.className = 'alert alert-danger mt-2';
+            resultEl.textContent = 'Erreur réseau lors de l\'upload.';
+            resultEl.classList.remove('d-none');
+        });
+
+        xhr.send(fd);
+    });
+
+    /* ----------------------------------------------------------
+     * Chargement automatique quand l'onglet Pièces jointes est activé
+     * ---------------------------------------------------------- */
+    var tabPieces = document.querySelector('[href="#tabPieces"]');
+    if (tabPieces) {
+        tabPieces.addEventListener('shown.bs.tab', function () {
+            chargerListe();
+        });
+    }
+
+    // Si l'onglet est actif au chargement de la page (ex: retour URL avec #tabPieces)
+    if (window.location.hash === '#tabPieces') {
+        chargerListe();
+    }
+})();
+
+/* ================================================================
+   Import détenus → Formulaire partie
+   ================================================================ */
+(function() {
+    var searchInput  = document.getElementById('searchDetenusInput');
+    var resultsEl    = document.getElementById('searchDetenusResults');
+    var importModal  = document.getElementById('modalImportDetenu');
+    var partieModal  = document.getElementById('modalAddPartie');
+    var debounceTimer;
+    var BASE = '<?=BASE_URL?>';
+
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        var q = this.value.trim();
+        if (q.length < 2) {
+            resultsEl.innerHTML = '<div class="text-center text-muted py-4 small"><i class="bi bi-search me-1"></i>Tapez au moins 2 caractères pour rechercher</div>';
+            return;
+        }
+        debounceTimer = setTimeout(function() { searchDetenus(q); }, 350);
+    });
+
+    // Reset search quand le modal se ferme
+    importModal.addEventListener('hidden.bs.modal', function() {
+        searchInput.value = '';
+        resultsEl.innerHTML = '<div class="text-center text-muted py-4 small"><i class="bi bi-search me-1"></i>Tapez au moins 2 caractères pour rechercher</div>';
+    });
+
+    function searchDetenus(q) {
+        resultsEl.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-danger"></div> Recherche...</div>';
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', BASE + '/api/detenus/search?q=' + encodeURIComponent(q), true);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                renderResults(JSON.parse(xhr.responseText));
+            } else {
+                resultsEl.innerHTML = '<div class="alert alert-danger py-2 small">Erreur lors de la recherche</div>';
+            }
+        };
+        xhr.onerror = function() {
+            resultsEl.innerHTML = '<div class="alert alert-danger py-2 small">Erreur réseau</div>';
+        };
+        xhr.send();
+    }
+
+    function renderResults(detenus) {
+        if (!detenus.length) {
+            resultsEl.innerHTML = '<div class="text-center text-muted py-4 small">Aucun détenu trouvé</div>';
+            return;
+        }
+        var html = '<div class="table-responsive"><table class="table table-hover table-sm align-middle mb-0">';
+        html += '<thead class="table-light"><tr><th>N° Écrou</th><th>Nom</th><th>Prénom</th><th>Incarceration</th><th></th></tr></thead><tbody>';
+        detenus.forEach(function(d) {
+            var dateInc = d.date_incarceration ? new Date(d.date_incarceration).toLocaleDateString('fr-FR') : '—';
+            html += '<tr>';
+            html += '<td class="font-monospace small">' + escHtml(d.numero_ecrou) + '</td>';
+            html += '<td>' + escHtml(d.nom) + '</td>';
+            html += '<td>' + escHtml(d.prenom) + '</td>';
+            html += '<td class="small">' + dateInc + '</td>';
+            html += '<td><button type="button" class="btn btn-sm btn-outline-danger btn-import-det"'
+                  + ' data-nom="' + escAttr(d.nom) + '"'
+                  + ' data-prenom="' + escAttr(d.prenom) + '"'
+                  + ' data-nationalite="' + escAttr(d.nationalite || 'Nigérienne') + '"'
+                  + ' data-adresse="' + escAttr(d.adresse_detention || '') + '">'
+                  + '<i class="bi bi-box-arrow-in-right me-1"></i>Importer</button></td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+        resultsEl.innerHTML = html;
+
+        // Attacher les événements sur les boutons Importer
+        resultsEl.querySelectorAll('.btn-import-det').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                // Vérifier que le type_partie sélectionné n'est pas avocat
+                var typeSelect = document.getElementById('selectTypePartie');
+                if (typeSelect && typeSelect.value === 'avocat') {
+                    alert('Les avocats ne peuvent pas être importés depuis les détenus. Veuillez changer le type de partie.');
+                    return;
+                }
+                // Pré-remplir le formulaire
+                var nomEl = document.getElementById('partieNom');
+                var prenomEl = document.getElementById('partiePrenom');
+                var natEl = document.getElementById('partieNationalite');
+                var adrEl = document.getElementById('partieAdresse');
+                if (nomEl) nomEl.value = btn.dataset.nom || '';
+                if (prenomEl) prenomEl.value = btn.dataset.prenom || '';
+                if (natEl) natEl.value = btn.dataset.nationalite || 'Nigérienne';
+                if (adrEl) adrEl.value = btn.dataset.adresse || '';
+                // Fermer modal import, ouvrir modal partie
+                bootstrap.Modal.getInstance(importModal).hide();
+                importModal.addEventListener('hidden.bs.modal', function openPartie() {
+                    new bootstrap.Modal(partieModal).show();
+                    importModal.removeEventListener('hidden.bs.modal', openPartie);
+                }, { once: true });
+            });
+        });
+    }
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function escAttr(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+})();
+</script>
+
