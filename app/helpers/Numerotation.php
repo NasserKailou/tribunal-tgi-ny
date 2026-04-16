@@ -91,4 +91,19 @@ class Numerotation {
         $seq = ($row['max_seq'] ?? 0) + 1;
         return sprintf("ECR%04d/%d", $seq, $annee);
     }
+    /**
+     * Génère un numéro de mandat : MAND N°XXX/YYYY/TGI-NY
+     */
+    public function genererMandat(int $annee = 0): string {
+        if (!$annee) $annee = (int)date('Y');
+        $stmt = $this->db->prepare(
+            "SELECT MAX(CAST(REGEXP_SUBSTR(numero, '[0-9]+') AS UNSIGNED)) as max_seq 
+             FROM mandats WHERE numero LIKE :pattern"
+        );
+        $stmt->execute(['pattern' => "MAND N°%/{$annee}/%"]);
+        $row = $stmt->fetch();
+        $seq = ($row['max_seq'] ?? 0) + 1;
+        return sprintf("MAND N°%03d/%d/TGI-NY", $seq, $annee);
+    }
+
 }

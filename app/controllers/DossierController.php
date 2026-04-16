@@ -223,6 +223,49 @@ class DossierController extends Controller {
         $this->redirect('/dossiers/show/' . $dossierId);
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // POST /dossiers/classer/{id}
+    // ─────────────────────────────────────────────────────────────
+    public function classerDossier(string $id): void {
+        Auth::requireLogin();
+        Auth::requireRole(['admin','procureur','substitut_procureur']);
+        CSRF::check();
+        $id     = (int)$id;
+        $motif  = $this->sanitize($_POST['motif_classement'] ?? '');
+        if (!$motif) { $this->flash('error','Veuillez indiquer le motif de classement.'); $this->redirect('/dossiers/show/'.$id); return; }
+        $ancien = $this->db->query("SELECT statut FROM dossiers WHERE id=$id")->fetchColumn();
+        $this->db->prepare("UPDATE dossiers SET statut='classe', motif_classement=:m WHERE id=:id")
+            ->execute([':m'=>$motif,':id'=>$id]);
+        $this->db->prepare("INSERT INTO mouvements_dossier (dossier_id,user_id,type_mouvement,ancien_statut,nouveau_statut,description) VALUES (?,?,'classement',?,?,'Classé sans suite')")
+            ->execute([$id, Auth::userId(), $ancien, 'classe']);
+        $this->flash('success', 'Dossier classé sans suite.');
+        $this->redirect('/dossiers/show/' . $id);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // POST /dossiers/declasser/{id}
+    // ─────────────────────────────────────────────────────────────
+    public function declasserDossier(string $id): void {
+        Auth::requireLogin();
+        Auth::requireRole(['admin','procureur']);
+        CSRF::check();
+        $id    = (int)$id;
+        $motif = $this->sanitize($_POST['motif_declassement'] ?? '');
+        if (!$motif) { $this->flash('error','Veuillez indiquer le motif du déclassement.'); $this->redirect('/dossiers/show/'.$id); return; }
+        // Vérifier que le dossier est bien classé
+        $dossier = $this->db->query("SELECT statut,motif_classement FROM dossiers WHERE id=$id")->fetch();
+        if (!$dossier || $dossier['statut'] !== 'classe') {
+            $this->flash('error','Ce dossier n\'est pas classé.'); $this->redirect('/dossiers/show/'.$id); return;
+        }
+        $this->db->prepare("UPDATE dossiers SET statut='parquet', motif_classement=NULL WHERE id=:id")
+            ->execute([':id'=>$id]);
+        $this->db->prepare("INSERT INTO mouvements_dossier (dossier_id,user_id,type_mouvement,ancien_statut,nouveau_statut,description) VALUES (?,?,'declassement','classe','parquet',?)")
+            ->execute([$id, Auth::userId(), 'Déclassé : '.$motif]);
+        $this->flash('success', 'Dossier déclassé et remis au parquet.');
+        $this->redirect('/dossiers/show/' . $id);
+    }
+
+
     private function getDossierDetail(int $id): ?array {
         $stmt = $this->db->prepare(
             "SELECT d.*,

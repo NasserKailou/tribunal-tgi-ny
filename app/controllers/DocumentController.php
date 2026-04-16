@@ -124,17 +124,17 @@ class DocumentController extends Controller
         // Insertion en base
         $stmt = $this->db->prepare(
             'INSERT INTO documents
-                (dossier_id, nom_fichier, nom_stockage, chemin_fichier, type_document, type_mime, taille_octets, description, uploaded_by, created_at)
+                (dossier_id, nom_original, nom_stockage, chemin_fichier, type_document, mime_type, taille_octets, description, uploaded_by, created_at)
              VALUES
-                (:dossier_id, :nom_fichier, :nom_stockage, :chemin_fichier, :type_document, :type_mime, :taille_octets, :description, :uploaded_by, NOW())'
+                (:dossier_id, :nom_original, :nom_stockage, :chemin_fichier, :type_document, :mime_type, :taille_octets, :description, :uploaded_by, NOW())'
         );
         $stmt->execute([
             ':dossier_id'    => $dossierId,
-            ':nom_fichier'   => $nomOriginal,
+            ':nom_original'  => $nomOriginal,
             ':nom_stockage'  => $nomStockage,
             ':chemin_fichier'=> $cheminRelatif,
             ':type_document' => 'piece_jointe',
-            ':type_mime'     => $mimeReel,
+            ':mime_type'     => $mimeReel,
             ':taille_octets' => $file['size'],
             ':description'   => $description ?: null,
             ':uploaded_by'   => Auth::userId(),
@@ -221,7 +221,7 @@ class DocumentController extends Controller
             exit('Fichier introuvable sur le serveur.');
         }
 
-        $mime = $doc['type_mime'] ?: 'application/octet-stream';
+        $mime = $doc['mime_type'] ?: 'application/octet-stream';
 
         // Inline pour PDF et images, attachment pour le reste
         if (in_array($mime, self::TYPES_INLINE, true)) {
@@ -232,7 +232,7 @@ class DocumentController extends Controller
 
         // Envoi du fichier
         header('Content-Type: ' . $mime);
-        header('Content-Disposition: ' . $disposition . '; filename="' . addslashes($doc['nom_fichier']) . '"');
+        header('Content-Disposition: ' . $disposition . '; filename="' . addslashes($doc['nom_original']) . '"');
         header('Content-Length: ' . filesize($cheminAbs));
         header('Cache-Control: private, max-age=3600');
         header('X-Content-Type-Options: nosniff');
@@ -259,7 +259,7 @@ class DocumentController extends Controller
         }
 
         $stmt = $this->db->prepare(
-            'SELECT d.id, d.nom_fichier, d.type_mime, d.taille_octets, d.description, d.created_at,
+            'SELECT d.id, d.nom_original, d.mime_type, d.taille_octets, d.description, d.created_at,
                     CONCAT(u.prenom, \' \', u.nom) AS uploaded_by_nom
              FROM documents d
              LEFT JOIN users u ON u.id = d.uploaded_by
@@ -273,15 +273,15 @@ class DocumentController extends Controller
         $result = array_map(function (array $row): array {
             return [
                 'id'             => (int) $row['id'],
-                'nom'            => $row['nom_fichier'],
-                'type'           => $row['type_mime'] ?? 'application/octet-stream',
+                'nom'            => $row['nom_original'],
+                'type'           => $row['mime_type'] ?? 'application/octet-stream',
                 'taille'         => $this->formatTaille((int) ($row['taille_octets'] ?? 0)),
                 'taille_octets'  => (int) ($row['taille_octets'] ?? 0),
                 'description'    => $row['description'],
                 'date'           => $row['created_at'] ? date('d/m/Y H:i', strtotime($row['created_at'])) : '—',
                 'uploaded_by'    => $row['uploaded_by_nom'],
                 'url'            => BASE_URL . '/documents/view/' . $row['id'],
-                'inline'         => in_array($row['type_mime'] ?? '', self::TYPES_INLINE, true),
+                'inline'         => in_array($row['mime_type'] ?? '', self::TYPES_INLINE, true),
             ];
         }, $rows);
 

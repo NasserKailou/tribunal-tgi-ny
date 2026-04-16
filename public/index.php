@@ -74,6 +74,18 @@ $router->post('/dossiers/affecter-instruction/{id}', 'DossierController@affecter
 $router->post('/dossiers/envoyer-audience/{id}', 'DossierController@envoyerAudience');
 $router->post('/dossiers/partie/add/{id}',       'DossierController@addPartie');
 $router->post('/dossiers/partie/delete/{id}',    'DossierController@deletePartie');
+$router->post('/dossiers/classer/{id}',         'DossierController@classerDossier');
+$router->post('/dossiers/declasser/{id}',       'DossierController@declasserDossier');
+
+
+// Mandats
+$router->get('/mandats',                      'MandatController@index');
+$router->get('/mandats/create',               'MandatController@create');
+$router->post('/mandats/store',               'MandatController@store');
+$router->get('/mandats/show/{id}',            'MandatController@show');
+$router->get('/mandats/print/{id}',           'MandatController@printMandat');
+$router->post('/mandats/update-statut/{id}',  'MandatController@updateStatut');
+$router->get('/api/mandat-person-search',     'MandatController@apiSearch');
 
 // Audiences
 $router->get('/audiences',                    'AudienceController@index');

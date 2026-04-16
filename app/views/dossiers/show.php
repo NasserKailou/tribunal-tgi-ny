@@ -78,6 +78,27 @@
                     </div>
                 </div>
                 <?php endif; ?>
+                <?php if(in_array($dossier['statut'],['parquet','instruction','en_audience']) && Auth::hasRole(['admin','procureur','substitut_procureur'])): ?>
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white fw-semibold"><i class="bi bi-archive text-secondary me-2"></i>Classement</div>
+                    <div class="card-body d-grid gap-2">
+                        <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#modalClasser">
+                            <i class="bi bi-archive me-2"></i>Classer sans suite
+                        </button>
+                    </div>
+                </div>
+                <?php endif; ?>
+                <?php if($dossier['statut']==='classe' && Auth::hasRole(['admin','procureur'])): ?>
+                <div class="card border-0 shadow-sm mb-3 border-warning">
+                    <div class="card-header bg-warning fw-semibold"><i class="bi bi-arrow-counterclockwise me-2"></i>Dossier classé</div>
+                    <div class="card-body">
+                        <?php if($dossier['motif_classement']): ?><p class="small text-muted mb-2"><strong>Motif :</strong> <?=htmlspecialchars($dossier['motif_classement'])?></p><?php endif; ?>
+                        <button class="btn btn-warning w-100 btn-sm" data-bs-toggle="modal" data-bs-target="#modalDeclasser">
+                            <i class="bi bi-arrow-counterclockwise me-2"></i>Déclasser ce dossier
+                        </button>
+                    </div>
+                </div>
+                <?php endif; ?>
                 <?php if($dossier['statut']==='en_audience'): ?>
                 <div class="card border-0 shadow-sm mb-3">
                     <div class="card-body d-grid gap-2">
@@ -735,5 +756,52 @@
         return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 })();
+
+<!-- Modal Classer sans suite -->
+<div class="modal fade" id="modalClasser" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header bg-secondary text-white">
+            <h5 class="modal-title"><i class="bi bi-archive me-2"></i>Classer sans suite</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" action="<?=BASE_URL?>/dossiers/classer/<?=$dossier['id']?>">
+            <?=CSRF::field()?>
+            <div class="modal-body">
+                <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>Cette action classe le dossier sans suite. Vous pourrez le déclasser ultérieurement.</div>
+                <label class="form-label fw-bold">Motif du classement <span class="text-danger">*</span></label>
+                <textarea name="motif_classement" class="form-control" rows="4" required placeholder="Exposez les raisons du classement sans suite…"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-dark"><i class="bi bi-archive me-1"></i>Confirmer le classement</button>
+            </div>
+        </form>
+    </div></div>
+</div>
+
+<!-- Modal Déclasser -->
+<div class="modal fade" id="modalDeclasser" tabindex="-1">
+    <div class="modal-dialog"><div class="modal-content">
+        <div class="modal-header bg-warning">
+            <h5 class="modal-title"><i class="bi bi-arrow-counterclockwise me-2"></i>Déclasser le dossier</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" action="<?=BASE_URL?>/dossiers/declasser/<?=$dossier['id']?>">
+            <?=CSRF::field()?>
+            <div class="modal-body">
+                <div class="alert alert-info"><i class="bi bi-info-circle me-2"></i>Le dossier sera remis au stade <strong>Parquet</strong> pour reprise du traitement.</div>
+                <?php if($dossier['motif_classement']): ?>
+                <div class="mb-3"><small class="text-muted">Motif du classement initial :</small><p class="fst-italic small"><?=htmlspecialchars($dossier['motif_classement'])?></p></div>
+                <?php endif; ?>
+                <label class="form-label fw-bold">Motif du déclassement <span class="text-danger">*</span></label>
+                <textarea name="motif_declassement" class="form-control" rows="4" required placeholder="Exposez les raisons du déclassement (nouveaux éléments, erreur de procédure…)"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="submit" class="btn btn-warning"><i class="bi bi-arrow-counterclockwise me-1"></i>Confirmer le déclassement</button>
+            </div>
+        </form>
+    </div></div>
+</div>
 </script>
 

@@ -50,7 +50,7 @@ class CarteController extends Controller {
                 JOIN communes c_inner ON p_inner.commune_id = c_inner.id
                 WHERE p_inner.est_antiterroriste = 1
                 $dateWhere
-            ) p ON p.commune_nom = cg.nom
+            ) p ON UPPER(p.commune_nom) = UPPER(cg.nom) OR UPPER(p.commune_nom) = cg.nom
             WHERE 1=1 $regionWhere
             GROUP BY cg.id, cg.nom, cg.departement_nom, cg.region_nom, cg.latitude, cg.longitude, cg.code_commune
             ORDER BY pv_count DESC, cg.nom ASC
@@ -72,7 +72,7 @@ class CarteController extends Controller {
                 JOIN communes c_inner ON p_inner.commune_id = c_inner.id
                 WHERE p_inner.est_antiterroriste = 1
                 $dateWhere
-            ) p ON p.commune_nom = cg.nom
+            ) p ON UPPER(p.commune_nom) = UPPER(cg.nom) OR UPPER(p.commune_nom) = cg.nom
             GROUP BY cg.region_nom
             ORDER BY pv_count DESC
         ";

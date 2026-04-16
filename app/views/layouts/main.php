@@ -55,6 +55,9 @@ function isActive(string $prefix, string $currentPath): string {
             <i class="bi bi-person-lock"></i> Population Carcérale
         </a>
         <div class="sidebar-section">Sécurité</div>
+        <a href="<?= BASE_URL ?>/mandats" class="sidebar-link <?= isActive('/mandats', $currentPath) ?>">
+            <i class="bi bi-file-ruled text-danger"></i> Mandats de Justice
+        </a>
         <a href="<?= BASE_URL ?>/carte" class="sidebar-link <?= isActive('/carte', $currentPath) ?>">
             <i class="bi bi-map"></i> Carte Antiterroriste
         </a>
