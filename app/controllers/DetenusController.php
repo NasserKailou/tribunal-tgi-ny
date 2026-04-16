@@ -237,12 +237,12 @@ class DetenusController extends Controller {
                     ) AS adresse_detention,
                     numero_ecrou, date_incarceration
              FROM detenus
-             WHERE (nom LIKE :q OR prenom LIKE :q OR numero_ecrou LIKE :q)
+             WHERE (nom LIKE :q1 OR prenom LIKE :q2 OR numero_ecrou LIKE :q3)
                AND statut='incarcere'
              ORDER BY nom, prenom
              LIMIT 30"
         );
-        $stmt->execute([':q' => "%$q%"]);
+        $stmt->execute([':q1' => "%$q%", ':q2' => "%$q%", ':q3' => "%$q%"]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         echo json_encode($rows);
     }
