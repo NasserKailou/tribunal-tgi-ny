@@ -304,6 +304,7 @@ class PVController extends Controller {
         );
         $piStmt->execute([$id]);
         $pv['primo_intervenants'] = $piStmt->fetchAll();
+        $pv['primo_ids'] = array_column($pv['primo_intervenants'], 'id');
 
         return $pv;
     }
