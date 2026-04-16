@@ -95,6 +95,7 @@ $router->post('/jugements/appel/{id}',        'JugementController@enregistrerApp
 $router->get('/detenus',              'DetenusController@index');
 $router->get('/detenus/create',       'DetenusController@create');
 $router->post('/detenus/store',       'DetenusController@store');
+$router->get('/detenus/etat/{id}',     'DetenusController@etat');
 $router->get('/detenus/show/{id}',    'DetenusController@show');
 $router->get('/detenus/edit/{id}',    'DetenusController@edit');
 $router->post('/detenus/update/{id}', 'DetenusController@update');
@@ -165,6 +166,7 @@ $router->post('/config/maisons-arret/store',             'ConfigController@maiso
 $router->post('/config/maisons-arret/update/{id}',       'ConfigController@maisonArretUpdate');
 $router->post('/config/maisons-arret/delete/{id}',       'ConfigController@maisonArretDelete');
 
+$router->get('/config/membres-audience',                'ConfigController@membresAudience');
 $router->get('/config/salles-audience',                  'ConfigController@sallesAudience');
 $router->post('/config/salles-audience/store',           'ConfigController@salleAudienceStore');
 $router->post('/config/salles-audience/update/{id}',     'ConfigController@salleAudienceUpdate');

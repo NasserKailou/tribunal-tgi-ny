@@ -132,6 +132,24 @@
 
 </div>
 
+
+    <div class="col-md-6 col-xl-4">
+        <a href="<?= BASE_URL ?>/config/membres-audience" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 config-card">
+                <div class="card-body d-flex align-items-center gap-3 p-4">
+                    <div class="config-icon bg-primary bg-opacity-10 text-primary">
+                        <i class="bi bi-people-fill fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-1">Membres d'audience</h5>
+                        <p class="text-muted mb-0 small">Rôles, siège, greffiers, parquet</p>
+                        <span class="badge bg-primary mt-1"><?= $stats['membres_audience'] ?? '—' ?> rôle(s) actifs</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
 <style>
 .config-card { transition: transform .15s, box-shadow .15s; cursor: pointer; }
 .config-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,.12) !important; }

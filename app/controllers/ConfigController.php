@@ -30,6 +30,7 @@ class ConfigController extends Controller
             'infractions'       => (int)$this->db->query("SELECT COUNT(*) FROM infractions")->fetchColumn(),
             'maisons_arret'     => (int)$this->db->query("SELECT COUNT(*) FROM maisons_arret")->fetchColumn(),
             'salles_audience'   => (int)$this->db->query("SELECT COUNT(*) FROM salles_audience")->fetchColumn(),
+            'membres_audience'  => (int)$this->db->query("SELECT COUNT(DISTINCT CONCAT(role_audience)) FROM membres_audience")->fetchColumn(),
         ];
 
         $pageTitle = 'Configuration';
@@ -620,4 +621,43 @@ class ConfigController extends Controller
         $this->flash('success', 'Salle d\'audience supprimée.');
         $this->redirect('/config/salles-audience');
     }
+
+    // ─── CRUD Membres d'audience par défaut ─────────────────────────────────
+    // (liste des rôles types disponibles pour configurer une audience)
+
+    public function membresAudience(): void {
+        $this->requireConfig();
+        $roles = [
+            'president'           => 'Président',
+            'greffier'            => 'Greffier',
+            'assesseur_1'         => 'Assesseur N°1',
+            'assesseur_2'         => 'Assesseur N°2',
+            'jure_1'              => 'Juré N°1',
+            'jure_2'              => 'Juré N°2',
+            'procureur'           => 'Représentant du Parquet',
+            'substitut'           => 'Substitut',
+            'juge_assesseur'      => 'Juge assesseur',
+            'avocat_defense'      => 'Avocat de la défense',
+            'avocat_partie_civile'=> 'Avocat de la partie civile',
+            'greffier_adjoint'    => 'Greffier adjoint',
+            'autre'               => 'Autre membre',
+        ];
+
+        // Membres fréquents (utilisateurs avec rôles judiciaires)
+        $juges     = $this->db->query("SELECT u.*, r.code as role_code FROM users u JOIN roles r ON u.role_id=r.id WHERE r.code IN ('president','juge_siege','vice_president') AND u.actif=1 ORDER BY u.nom")->fetchAll();
+        $greffiers = $this->db->query("SELECT u.* FROM users u JOIN roles r ON u.role_id=r.id WHERE r.code='greffier' AND u.actif=1 ORDER BY u.nom")->fetchAll();
+        $parquet   = $this->db->query("SELECT u.* FROM users u JOIN roles r ON u.role_id=r.id WHERE r.code IN ('procureur','substitut_procureur') AND u.actif=1 ORDER BY r.id, u.prenom")->fetchAll();
+
+        // Stats : audiences récentes avec composition
+        $stats = $this->db->query("
+            SELECT role_audience, COUNT(*) as nb
+            FROM membres_audience
+            GROUP BY role_audience ORDER BY nb DESC
+        ")->fetchAll();
+
+        $flash = $this->getFlash();
+        $user  = Auth::currentUser();
+        $this->view('config/membres-audience', compact('roles','juges','greffiers','parquet','stats','flash','user'));
+    }
+
 }

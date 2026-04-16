@@ -56,7 +56,18 @@ class AudienceController extends Controller {
     public function store(): void {
         Auth::requireLogin();
         CSRF::check();
-        $annee = date('Y', strtotime($_POST['date_audience']));
+
+        // Valider date obligatoire
+        $dateAudience = trim($_POST['date_audience'] ?? '');
+        if (!$dateAudience) {
+            $this->flash('error', 'La date et heure de l\'audience sont obligatoires.');
+            $this->redirect('/audiences/create');
+        }
+        // Normaliser datetime-local → MySQL DATETIME
+        $dateAudience = str_replace('T', ' ', $dateAudience);
+        if (strlen($dateAudience) === 16) $dateAudience .= ':00';
+
+        $annee = date('Y', strtotime($dateAudience));
         $seq   = (int)$this->db->query("SELECT COUNT(*)+1 FROM audiences WHERE YEAR(date_audience)={$annee}")->fetchColumn();
         $numAud= sprintf("AUD N°%03d/%d/TGI-NY", $seq, $annee);
 
@@ -68,7 +79,7 @@ class AudienceController extends Controller {
         $ins->execute([
             (int)$_POST['dossier_id'],
             $_POST['salle_id'] ?: null,
-            $_POST['date_audience'],
+            $dateAudience,
             $_POST['type_audience'],
             $_POST['president_id'] ?: null,
             $_POST['greffier_id'] ?: null,

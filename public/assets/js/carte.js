@@ -191,7 +191,7 @@ function updateTopCommune(communes) {
 
 // ── Tableau récapitulatif ─────────────────────────────────────────────────────
 function updateTable(communes) {
-    const tbody = document.getElementById('tableBody');
+    const tbody = document.getElementById('tableRecap');
     if (!tbody) return;
     const total = window._totalPV || 0;
     const sorted = (communes || []).filter(c => c.pv_count > 0).sort((a, b) => b.pv_count - a.pv_count);
@@ -217,7 +217,7 @@ function updateTable(communes) {
 // ── Graphique doughnut par région ─────────────────────────────────────────────
 let chartInstance = null;
 function updateChart(pvByRegionData) {
-    const canvas = document.getElementById('regionChart');
+    const canvas = document.getElementById('donutRegion');
     if (!canvas) return;
     const labels = Object.keys(pvByRegionData).filter(k => pvByRegionData[k] > 0);
     const values = labels.map(k => pvByRegionData[k]);
@@ -246,4 +246,9 @@ function updateChart(pvByRegionData) {
             }
         }
     });
+}
+
+// ── Filtre région rapide (onchange) ──────────────────────────────────────────
+function applyRegionFilter() {
+    loadMapData();
 }

@@ -133,10 +133,11 @@
                     <table class="table table-sm table-bordered table-hover mb-0">
                         <thead class="table-dark sticky-top">
                             <tr>
+                                <th width="30">#</th>
                                 <th>Commune</th>
+                                <th>Département</th>
                                 <th>Région</th>
-                                <th class="text-center">Nb PV</th>
-                                <th class="text-center">% total</th>
+                                <th class="text-center">PV</th>
                             </tr>
                         </thead>
                         <tbody id="tableRecap">
@@ -156,10 +157,9 @@
 </div>
 
 <!-- ── Leaflet + Chart.js ────────────────────────────────────────────────────── -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WLcE=" crossorigin=""></script>
+<!-- Leaflet sans SRI (hash integrity bloque le chargement sur certains navigateurs) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <script src="<?= BASE_URL ?>/assets/js/carte.js"></script>
 

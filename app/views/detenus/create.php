@@ -2,7 +2,7 @@
 
 <!-- Modal Nouveau Détenu -->
 <div class="modal fade" id="modalNewDetenu" tabindex="-1" aria-labelledby="modalNewDetenuLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable modal-fullscreen-lg-down">
     <div class="modal-content">
 
       <div class="modal-header bg-danger text-white py-2">

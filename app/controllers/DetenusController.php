@@ -99,8 +99,9 @@ class DetenusController extends Controller {
             ':photo_identite'     => $photoPath,
             ':notes'              => $this->sanitize($_POST['notes'] ?? ''),
         ]);
+        $newId = (int)$this->db->lastInsertId();
         $this->flash('success',"Détenu enregistré — Écrou : $ecrou");
-        $this->redirect('/detenus');
+        $this->redirect('/detenus/etat/' . $newId);
     }
 
     public function show(string $id): void {
@@ -293,4 +294,26 @@ class DetenusController extends Controller {
 
         return 'uploads/photos_detenus/' . $filename;
     }
+
+    // ─── État d'écrou imprimable ────────────────────────────────────────────
+    public function etat(string $id): void {
+        Auth::requireLogin();
+        $stmt = $this->db->prepare(
+            "SELECT d.*, dos.numero_rg, dos.objet as affaire_objet,
+                    j.numero_jugement, j.dispositif,
+                    ma.nom AS maison_arret_nom
+             FROM detenus d
+             LEFT JOIN dossiers dos ON d.dossier_id = dos.id
+             LEFT JOIN jugements j  ON d.jugement_id = j.id
+             LEFT JOIN maisons_arret ma ON d.maison_arret_id = ma.id
+             WHERE d.id = :id"
+        );
+        $stmt->execute([':id' => (int)$id]);
+        $detenu = $stmt->fetch();
+        if (!$detenu) { $this->redirect('/detenus'); }
+        $flash = $this->getFlash();
+        $user  = Auth::currentUser();
+        $this->view('detenus/etat', compact('detenu','flash','user'));
+    }
+
 }
