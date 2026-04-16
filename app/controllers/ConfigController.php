@@ -646,7 +646,7 @@ class ConfigController extends Controller
         // Membres fréquents (utilisateurs avec rôles judiciaires)
         $juges     = $this->db->query("SELECT u.*, r.code as role_code FROM users u JOIN roles r ON u.role_id=r.id WHERE r.code IN ('president','juge_siege','vice_president') AND u.actif=1 ORDER BY u.nom")->fetchAll();
         $greffiers = $this->db->query("SELECT u.* FROM users u JOIN roles r ON u.role_id=r.id WHERE r.code='greffier' AND u.actif=1 ORDER BY u.nom")->fetchAll();
-        $parquet   = $this->db->query("SELECT u.* FROM users u JOIN roles r ON u.role_id=r.id WHERE r.code IN ('procureur','substitut_procureur') AND u.actif=1 ORDER BY r.id, u.prenom")->fetchAll();
+        $parquet   = $this->db->query("SELECT u.*, r.code as role_code FROM users u JOIN roles r ON u.role_id=r.id WHERE r.code IN ('procureur','substitut_procureur') AND u.actif=1 ORDER BY r.id, u.prenom")->fetchAll();
 
         // Stats : audiences récentes avec composition
         $stats = $this->db->query("
