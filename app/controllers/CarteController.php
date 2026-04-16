@@ -3,97 +3,98 @@ class CarteController extends Controller {
 
     public function index(): void {
         Auth::requireLogin();
-        $user = Auth::currentUser();
-        $this->view('carte/index', compact('user'));
+        $user  = Auth::currentUser();
+        $flash = $this->getFlash();
+        $this->view('carte/index', compact('user','flash'));
     }
 
     /**
-     * Endpoint principal : GET /api/carte-data
-     * Retourne pvByCommune, pvByRegion, stats générales
+     * API JSON — données PV antiterroristes par commune (GeoJSON-ready)
      */
     public function apiData(): void {
         Auth::requireLogin();
 
         $dateDebut = $_GET['date_debut'] ?? null;
         $dateFin   = $_GET['date_fin']   ?? null;
+        $regionFlt = $_GET['region']     ?? null;
 
         $params    = [];
         $dateWhere = '';
         if ($dateDebut && $dateFin) {
-            $dateWhere  = "AND p.date_reception BETWEEN :dd AND :df";
+            $dateWhere = "AND p.date_reception BETWEEN :dd AND :df";
             $params['dd'] = $dateDebut;
             $params['df'] = $dateFin;
         }
+        $regionWhere = '';
+        if ($regionFlt) {
+            $regionWhere = "AND cg.region_nom = :rn";
+            $params['rn'] = $regionFlt;
+        }
 
-        // ── PV par commune ────────────────────────────────────────────────────
-        $sql = "SELECT c.id, c.nom, c.latitude, c.longitude,
-                       dep.nom  AS dept_nom,
-                       r.nom    AS region_nom,
-                       COUNT(p.id) AS pv_count
-                FROM communes c
-                LEFT JOIN departements dep ON c.departement_id = dep.id
-                LEFT JOIN regions r        ON dep.region_id    = r.id
-                LEFT JOIN pv p             ON p.commune_id = c.id
-                                          AND p.est_antiterroriste = 1
-                                          $dateWhere
-                WHERE c.latitude IS NOT NULL
-                GROUP BY c.id, c.nom, c.latitude, c.longitude, dep.nom, r.nom
-                ORDER BY pv_count DESC";
+        // Toutes les communes GeoJSON + count PV antiterroristes
+        // On joint sur le nom de commune (normalize)
+        $sql = "
+            SELECT
+                cg.id,
+                cg.nom,
+                cg.departement_nom AS dept_nom,
+                cg.region_nom,
+                cg.latitude,
+                cg.longitude,
+                cg.code_commune,
+                COUNT(p.id) AS pv_count
+            FROM communes_geo cg
+            LEFT JOIN (
+                SELECT p_inner.id, c_inner.nom AS commune_nom
+                FROM pv p_inner
+                JOIN communes c_inner ON p_inner.commune_id = c_inner.id
+                WHERE p_inner.est_antiterroriste = 1
+                $dateWhere
+            ) p ON p.commune_nom = cg.nom
+            WHERE 1=1 $regionWhere
+            GROUP BY cg.id, cg.nom, cg.departement_nom, cg.region_nom, cg.latitude, cg.longitude, cg.code_commune
+            ORDER BY pv_count DESC, cg.nom ASC
+        ";
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         $communes = $stmt->fetchAll();
+        foreach ($communes as &$c) { $c['pv_count'] = (int)$c['pv_count']; }
+        unset($c);
 
-        // Caster les entiers
-        foreach ($communes as &$comm) {
-            $comm['pv_count'] = (int) $comm['pv_count'];
-        }
-        unset($comm);
-
-        // ── PV par région ─────────────────────────────────────────────────────
-        $sqlRegion = "SELECT r.nom AS region_nom, COUNT(p.id) AS pv_count
-                      FROM pv p
-                      JOIN communes c   ON p.commune_id     = c.id
-                      JOIN departements dep ON c.departement_id = dep.id
-                      JOIN regions r    ON dep.region_id    = r.id
-                      WHERE p.est_antiterroriste = 1
-                      $dateWhere
-                      GROUP BY r.nom
-                      ORDER BY pv_count DESC";
-
-        $stmtR   = $this->db->prepare($sqlRegion);
-        $stmtR->execute($params);
-        $rowsR   = $stmtR->fetchAll();
+        // PV par région
+        $sqlR = "
+            SELECT cg.region_nom, COUNT(p.id) AS pv_count
+            FROM communes_geo cg
+            LEFT JOIN (
+                SELECT p_inner.id, c_inner.nom AS commune_nom
+                FROM pv p_inner
+                JOIN communes c_inner ON p_inner.commune_id = c_inner.id
+                WHERE p_inner.est_antiterroriste = 1
+                $dateWhere
+            ) p ON p.commune_nom = cg.nom
+            GROUP BY cg.region_nom
+            ORDER BY pv_count DESC
+        ";
+        $stmtR = $this->db->prepare($sqlR);
+        $stmtR->execute(array_filter($params, fn($k) => in_array($k,['dd','df']), ARRAY_FILTER_USE_KEY));
         $pvByRegion = [];
-        foreach ($rowsR as $row) {
-            $pvByRegion[$row['region_nom']] = (int) $row['pv_count'];
+        foreach ($stmtR->fetchAll() as $row) {
+            $pvByRegion[$row['region_nom']] = (int)$row['pv_count'];
         }
 
-        // ── Stats générales ───────────────────────────────────────────────────
-        $totalAntiterro   = (int) $this->db
-            ->query("SELECT COUNT(*) FROM pv WHERE est_antiterroriste = 1")
-            ->fetchColumn();
-
-        $communesActives  = (int) $this->db
-            ->query("SELECT COUNT(DISTINCT commune_id) FROM pv WHERE est_antiterroriste = 1 AND commune_id IS NOT NULL")
-            ->fetchColumn();
-
-        // ── Commune la plus touchée ───────────────────────────────────────────
-        $topCommune = !empty($communes) ? $communes[0] : null;
+        $totalAnti  = (int)$this->db->query("SELECT COUNT(*) FROM pv WHERE est_antiterroriste=1")->fetchColumn();
+        $commActives= (int)$this->db->query("SELECT COUNT(DISTINCT c.nom) FROM pv p JOIN communes c ON p.commune_id=c.id WHERE p.est_antiterroriste=1")->fetchColumn();
+        $topCommune = count($communes) > 0 ? $communes[0] : null;
 
         $this->json([
-            'communes'        => $communes,
-            'pvByRegion'      => $pvByRegion,
-            'total_pv_anti'   => $totalAntiterro,
-            'communes_actives'=> $communesActives,
-            'top_commune'     => $topCommune,
+            'communes'         => $communes,
+            'pvByRegion'       => $pvByRegion,
+            'total_pv_anti'    => $totalAnti,
+            'communes_actives' => $commActives,
+            'top_commune'      => $topCommune,
         ]);
     }
 
-    /**
-     * Alias route : GET /carte/data  (accès direct depuis la vue)
-     */
-    public function data(): void {
-        $this->apiData();
-    }
+    public function data(): void { $this->apiData(); }
 }

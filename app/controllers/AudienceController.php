@@ -49,7 +49,8 @@ class AudienceController extends Controller {
         $juges    = $this->db->query("SELECT u.* FROM users u JOIN roles r ON u.role_id=r.id WHERE r.code IN ('president','juge_siege','vice_president') AND u.actif=1")->fetchAll();
         $greffiers= $this->db->query("SELECT u.* FROM users u JOIN roles r ON u.role_id=r.id WHERE r.code='greffier' AND u.actif=1")->fetchAll();
         $dossierPreselect = (int)($_GET['dossier_id'] ?? 0);
-        $this->view('audiences/create', compact('dossiers','salles','juges','greffiers','dossierPreselect','user'));
+        $parquet  = $this->db->query("SELECT u.*, r.code as role_code FROM users u JOIN roles r ON u.role_id=r.id WHERE r.code IN ('procureur','substitut_procureur') AND u.actif=1 ORDER BY r.id, u.prenom")->fetchAll();
+        $this->view('audiences/create', compact('dossiers','salles','juges','greffiers','parquet','dossierPreselect','user'));
     }
 
     public function store(): void {
@@ -77,9 +78,33 @@ class AudienceController extends Controller {
         ]);
         $audId = (int)$this->db->lastInsertId();
 
-        // Membres additionnels
+        // ── Composition : assesseurs, jurés, parquet ───────────────────────
+        $insMem = $this->db->prepare(
+            "INSERT INTO membres_audience (audience_id, user_id, nom_externe, role_audience) VALUES (?,?,?,?)"
+        );
+        // Assesseur 1
+        $a1id  = (int)($_POST['assesseur1_id'] ?? 0);
+        $a1nom = trim($_POST['assesseur1_nom'] ?? '');
+        if ($a1id || $a1nom) {
+            $insMem->execute([$audId, $a1id ?: null, $a1nom ?: null, 'assesseur_1']);
+        }
+        // Assesseur 2
+        $a2id  = (int)($_POST['assesseur2_id'] ?? 0);
+        $a2nom = trim($_POST['assesseur2_nom'] ?? '');
+        if ($a2id || $a2nom) {
+            $insMem->execute([$audId, $a2id ?: null, $a2nom ?: null, 'assesseur_2']);
+        }
+        // Juré 1
+        $j1 = trim($_POST['jure1_nom'] ?? '');
+        if ($j1) { $insMem->execute([$audId, null, $j1, 'jure_1']); }
+        // Juré 2
+        $j2 = trim($_POST['jure2_nom'] ?? '');
+        if ($j2) { $insMem->execute([$audId, null, $j2, 'jure_2']); }
+        // Représentant parquet
+        $pqId = (int)($_POST['parquet_id'] ?? 0);
+        if ($pqId) { $insMem->execute([$audId, $pqId, null, 'procureur']); }
+        // Membres libres supplémentaires (compatibilité ancienne API)
         if (!empty($_POST['membres']) && is_array($_POST['membres'])) {
-            $insMem = $this->db->prepare("INSERT INTO membres_audience (audience_id, user_id, nom_externe, role_audience) VALUES (?,?,?,?)");
             foreach ($_POST['membres'] as $m) {
                 $insMem->execute([$audId, $m['user_id'] ?: null, $m['nom_externe'] ?? null, $m['role_audience']]);
             }
