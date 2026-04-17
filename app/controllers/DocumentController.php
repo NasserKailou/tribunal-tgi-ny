@@ -121,24 +121,41 @@ class DocumentController extends Controller
         // Description optionnelle
         $description = trim($_POST['description'] ?? '');
 
-        // Insertion en base
-        $stmt = $this->db->prepare(
-            'INSERT INTO documents
-                (dossier_id, nom_original, nom_stockage, chemin_fichier, type_document, mime_type, taille_octets, description, uploaded_by, created_at)
-             VALUES
-                (:dossier_id, :nom_original, :nom_stockage, :chemin_fichier, :type_document, :mime_type, :taille_octets, :description, :uploaded_by, NOW())'
-        );
-        $stmt->execute([
+        // Insertion en base — construction dynamique pour compatibilité schéma 001 / 005
+        // (colonne nom_original OU nom_fichier, mime_type OU type_mime selon version)
+        $colonnes = $this->db->query("SHOW COLUMNS FROM documents")->fetchAll(\PDO::FETCH_COLUMN);
+        $cols     = ['dossier_id', 'nom_stockage', 'chemin_fichier', 'type_document', 'taille_octets', 'description', 'uploaded_by', 'created_at'];
+        $vals     = [':dossier_id', ':nom_stockage', ':chemin_fichier', ':type_document', ':taille_octets', ':description', ':uploaded_by', 'NOW()'];
+        $params   = [
             ':dossier_id'    => $dossierId,
-            ':nom_original'  => $nomOriginal,
             ':nom_stockage'  => $nomStockage,
             ':chemin_fichier'=> $cheminRelatif,
             ':type_document' => 'piece_jointe',
-            ':mime_type'     => $mimeReel,
             ':taille_octets' => $file['size'],
             ':description'   => $description ?: null,
             ':uploaded_by'   => Auth::userId(),
-        ]);
+        ];
+
+        if (in_array('nom_original', $colonnes)) {
+            $cols[] = 'nom_original'; $vals[] = ':nom_original';
+            $params[':nom_original'] = $nomOriginal;
+        }
+        if (in_array('nom_fichier', $colonnes)) {
+            $cols[] = 'nom_fichier'; $vals[] = ':nom_fichier';
+            $params[':nom_fichier'] = $nomOriginal;
+        }
+        if (in_array('mime_type', $colonnes)) {
+            $cols[] = 'mime_type'; $vals[] = ':mime_type';
+            $params[':mime_type'] = $mimeReel;
+        }
+        if (in_array('type_mime', $colonnes)) {
+            $cols[] = 'type_mime'; $vals[] = ':type_mime';
+            $params[':type_mime'] = $mimeReel;
+        }
+
+        $sql  = 'INSERT INTO documents (' . implode(', ', $cols) . ') VALUES (' . implode(', ', $vals) . ')';
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
         $newId = (int) $this->db->lastInsertId();
 
         $this->json([
@@ -213,6 +230,10 @@ class DocumentController extends Controller
             exit('Document introuvable.');
         }
 
+        // Normaliser les colonnes (compatibilité migration 001 vs 005)
+        $doc['nom_original'] = $doc['nom_original'] ?? $doc['nom_fichier'] ?? $doc['nom_stockage'] ?? 'document';
+        $doc['mime_type']    = $doc['mime_type']    ?? $doc['type_mime']  ?? 'application/octet-stream';
+
         // Construire le chemin absolu — chemin_fichier stocké en relatif (ex: uploads/documents/dossier_1/xxx.pdf)
         $cheminRelatif = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $doc['chemin_fichier']);
         $cheminAbs     = ROOT_PATH . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . $cheminRelatif;
@@ -233,14 +254,26 @@ class DocumentController extends Controller
             ob_end_clean();
         }
 
+        // Nom de fichier sécurisé pour l'en-tête Content-Disposition (RFC 6266)
+        $nomSafe  = preg_replace('/[^\w\.\-]/', '_', $doc['nom_original']);
+        $nomUtf8  = rawurlencode($doc['nom_original']);
+
+        $filesize = filesize($cheminAbs);
+
         // Envoyer le fichier
         header('Content-Type: ' . $mime);
-        header('Content-Disposition: ' . $disposition . '; filename="' . addslashes($doc['nom_original']) . '"');
-        header('Content-Length: ' . filesize($cheminAbs));
+        header('Content-Disposition: ' . $disposition
+            . '; filename="' . $nomSafe . '"'
+            . '; filename*=UTF-8\'\'' . $nomUtf8);
+        if ($filesize !== false) {
+            header('Content-Length: ' . $filesize);
+        }
         header('Cache-Control: private, max-age=3600');
         header('X-Content-Type-Options: nosniff');
         // Autoriser l'affichage dans une iframe (même origine)
         header('X-Frame-Options: SAMEORIGIN');
+        // Supprimer tout en-tête Content-Security-Policy susceptible de bloquer les iframes
+        header_remove('Content-Security-Policy');
 
         readfile($cheminAbs);
         exit;
@@ -259,7 +292,10 @@ class DocumentController extends Controller
         }
 
         $stmt = $this->db->prepare(
-            'SELECT d.id, d.nom_original, d.mime_type, d.taille_octets, d.description, d.created_at,
+            'SELECT d.id,
+                    COALESCE(d.nom_original, d.nom_fichier, d.nom_stockage) AS nom_original,
+                    COALESCE(d.mime_type, d.type_mime, \'application/octet-stream\') AS mime_type,
+                    d.taille_octets, d.description, d.created_at,
                     CONCAT(u.prenom, \' \', u.nom) AS uploaded_by_nom
              FROM documents d
              LEFT JOIN users u ON u.id = d.uploaded_by

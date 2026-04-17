@@ -423,7 +423,8 @@
                 <iframe id="viewerFrame"
                         src="about:blank"
                         style="width:100%;height:100%;border:none;display:block"
-                        allowfullscreen></iframe>
+                        allowfullscreen
+                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"></iframe>
             </div>
         </div>
     </div>

@@ -8,6 +8,49 @@ SET NAMES utf8mb4;
 SET foreign_key_checks = 0;
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- 0. Corriger la table documents (colonnes manquantes pour DocumentController)
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Ajout chemin_fichier si manquant
+SET @col0a = (SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='documents' AND COLUMN_NAME='chemin_fichier');
+SET @sql0a = IF(@col0a=0,
+    'ALTER TABLE documents ADD COLUMN chemin_fichier VARCHAR(500) NULL AFTER nom_stockage',
+    'SELECT 1');
+PREPARE stmt FROM @sql0a; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Ajout nom_original si manquant (alias de nom_fichier)
+SET @col0d = (SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='documents' AND COLUMN_NAME='nom_original');
+SET @sql0d = IF(@col0d=0,
+    'ALTER TABLE documents ADD COLUMN nom_original VARCHAR(300) NOT NULL DEFAULT \'\' AFTER dossier_id',
+    'SELECT 1');
+PREPARE stmt FROM @sql0d; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Ajout mime_type si manquant (la migration 005 crée type_mime, DocumentController utilise mime_type)
+SET @col0e = (SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='documents' AND COLUMN_NAME='mime_type');
+SET @sql0e = IF(@col0e=0,
+    'ALTER TABLE documents ADD COLUMN mime_type VARCHAR(100) NULL AFTER chemin_fichier',
+    'SELECT 1');
+PREPARE stmt FROM @sql0e; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Ajout description si manquant
+SET @col0b = (SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='documents' AND COLUMN_NAME='description');
+SET @sql0b = IF(@col0b=0,
+    'ALTER TABLE documents ADD COLUMN description TEXT NULL AFTER mime_type',
+    'SELECT 1');
+PREPARE stmt FROM @sql0b; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Ajout updated_at si manquant
+SET @col0c = (SELECT COUNT(*) FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='documents' AND COLUMN_NAME='updated_at');
+SET @sql0c = IF(@col0c=0,
+    'ALTER TABLE documents ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP',
+    'SELECT 1');
+PREPARE stmt FROM @sql0c; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- 1. TABLE avocats
 -- ─────────────────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS avocats (
