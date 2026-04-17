@@ -17,7 +17,7 @@
 -- Mot de passe par défaut (TOUS les comptes) : Admin@2026
 -- Hash bcrypt : $2y$12$QOBYKWWfAWXEae1fpkEUFOH/JJvtCOqA0nwH/FKzzSPs.84nmc5Ym
 -- ============================================================
--- Créé le : 2026-04-17 | Version : 3.1 (migrations 001-010)
+-- Créé le : 2026-04-17 | Version : 3.3 (migrations 001-012)
 -- ============================================================
 
 SET NAMES utf8mb4;
@@ -183,6 +183,7 @@ CREATE TABLE IF NOT EXISTS pv (
     date_pv              DATE NOT NULL,
     date_reception       DATE NOT NULL,
     type_affaire         ENUM('civile','penale','commerciale') NOT NULL DEFAULT 'penale',
+    infraction_id        INT NULL,
     est_antiterroriste   TINYINT(1) DEFAULT 0,
     region_id            INT NULL,
     departement_id       INT NULL,
@@ -199,6 +200,7 @@ CREATE TABLE IF NOT EXISTS pv (
     created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (unite_enquete_id) REFERENCES unites_enquete(id) ON DELETE SET NULL,
+    FOREIGN KEY (infraction_id)    REFERENCES infractions(id)    ON DELETE SET NULL,
     FOREIGN KEY (region_id)        REFERENCES regions(id)        ON DELETE SET NULL,
     FOREIGN KEY (departement_id)   REFERENCES departements(id)   ON DELETE SET NULL,
     FOREIGN KEY (commune_id)       REFERENCES communes(id)       ON DELETE SET NULL,
@@ -222,6 +224,7 @@ CREATE TABLE IF NOT EXISTS dossiers (
     pv_id                   INT NULL,
     substitut_id            INT NULL,
     cabinet_id              INT NULL,
+    mode_poursuite          ENUM('aucun','CD','FD','CRCP','RI') NULL DEFAULT 'aucun' COMMENT 'Mode de poursuite : AUCUN=Aucun, CD=Citation Directe, FD=Flagrant délit, CRCP=Comparution sur Reconnaissance Préalable de Culpabilité, RI=Réquisitoire Introductif',
     intitule                VARCHAR(255) NOT NULL,
     objet                   TEXT,
     motif_classement        TEXT NULL,
@@ -744,7 +747,29 @@ INSERT IGNORE INTO infractions (code, libelle, categorie, peine_min_mois, peine_
 ('INF-012', 'Faux et usage de faux',                            'correctionnelle',    12,  36),
 ('INF-013', 'Trafic illicite de migrants',                      'correctionnelle',    24,  60),
 ('INF-014', 'Ivresse publique et manifeste',                    'contraventionnelle',  0,   1),
-('INF-015', 'Tapage nocturne et trouble à l''ordre public',     'contraventionnelle',  0,   1);
+('INF-015', 'Tapage nocturne et trouble à l''ordre public',     'contraventionnelle',  0,   1),
+('INF-016', 'Vol de nuit dans une habitation',                  'criminelle',         24, 120),
+('INF-017', 'Escroquerie',                                      'correctionnelle',    12,  60),
+('INF-018', 'Vol à main armé',                                  'criminelle',         60, 120),
+('INF-019', 'Coup et blessures volontaire',                     'correctionnelle',     6,  36),
+('INF-020', 'Trafic international de drogue à haut risque',     'criminelle',        120, 999),
+('INF-021', 'AMT',                                              'criminelle',         60, 120),
+('INF-022', 'Blanchiment',                                      'correctionnelle',    24,  60),
+('INF-023', 'Enrichissement illicite',                          'correctionnelle',    24,  60),
+('INF-024', 'Détournement des deniers publics',                 'correctionnelle',    24,  60),
+('INF-025', 'Infanticide',                                      'criminelle',        120, 999),
+('INF-026', 'Viol',                                             'criminelle',         60, 120),
+('INF-027', 'Abus de confiance',                                'correctionnelle',    12,  60),
+('INF-028', 'Faux et usage de faux',                            'correctionnelle',    12,  36),
+('INF-029', 'Coup mortel',                                      'criminelle',        120, 999),
+('INF-030', 'Assassinat',                                       'criminelle',        240, 999),
+('INF-031', 'Détention illégale d''arme à feu',                 'correctionnelle',    24,  60),
+('INF-032', 'Accès illégal dans un système informatisé',        'correctionnelle',    12,  36),
+('INF-033', 'Concussion',                                       'correctionnelle',    24,  60),
+('INF-034', 'Viol sur mineur de moins de 13 ans',               'criminelle',        120, 999),
+('INF-035', 'Financement du terrorisme',                        'criminelle',        120, 999),
+('INF-036', 'Vol avec violence',                                'criminelle',         60, 120),
+('INF-037', 'Terrorisme',                                       'criminelle',        120, 999);
 
 -- ============================================================
 -- 9. PARAMÈTRES DU TRIBUNAL
@@ -760,6 +785,7 @@ INSERT INTO parametres_tribunal (cle, valeur, groupe, libelle, type_champ) VALUE
 ('tribunal_email',              'contact@tgi-niamey.ne',                                         'identite',    'Email institutionnel',                 'email'),
 ('tribunal_website',            '',                                                              'identite',    'Site web',                             'url'),
 ('tribunal_devise',             'Fraternité — Travail — Progrès',                               'identite',    'Devise nationale',                     'text'),
+('app_base_url',                '',                                                              'identite',    'URL de base de l''application (laisser vide pour auto-détection)', 'url'),
 ('doc_entete_ligne1',           'REPUBLIQUE DU NIGER',                                           'documents',   'En-tête ligne 1',                     'text'),
 ('doc_entete_ligne2',           'MINISTÈRE DE LA JUSTICE',                                       'documents',   'En-tête ligne 2',                     'text'),
 ('doc_entete_ligne3',           'Tribunal de Grande Instance Hors Classe de Niamey',             'documents',   'En-tête ligne 3',                     'text'),
@@ -1097,7 +1123,7 @@ INSERT IGNORE INTO communes_geo (nom, departement_nom, region_nom, longitude, la
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================
--- TGI-NY — Base de données complète v3.1
+-- TGI-NY — Base de données complète v3.3
 -- Généré le : 2026-04-17
--- Migrations incluses : 001 à 010
+-- Migrations incluses : 001 à 012
 -- ============================================================

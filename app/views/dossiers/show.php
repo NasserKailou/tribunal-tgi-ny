@@ -41,6 +41,13 @@
                             <div class="col-md-6"><small class="text-muted">Type</small><br><span class="badge <?=$dossier['type_affaire']==='penale'?'bg-danger':($dossier['type_affaire']==='civile'?'bg-primary':'bg-success')?> fs-6"><?=ucfirst($dossier['type_affaire'])?></span></div>
                             <div class="col-md-6"><small class="text-muted">Substitut</small><br><strong><?=htmlspecialchars(($dossier['substitut_prenom']??'').($dossier['substitut_nom']?' '.$dossier['substitut_nom']:'—'))?></strong></div>
                             <div class="col-md-6"><small class="text-muted">Cabinet d'instruction</small><br><strong><?=htmlspecialchars($dossier['cabinet_num']?($dossier['cabinet_num'].' — '.$dossier['cabinet_lib']):'—')?></strong></div>
+                            <?php if(!empty($dossier['mode_poursuite']) && $dossier['mode_poursuite'] !== 'aucun'): ?>
+                            <?php $mpLabels=['CD'=>'Citation Directe','FD'=>'Flagrant Délit','CRCP'=>'CRCP','RI'=>'Réquisitoire Introductif']; ?>
+                            <div class="col-md-6"><small class="text-muted">Mode de poursuite</small><br>
+                                <span class="badge bg-info text-dark fs-6"><?=htmlspecialchars($dossier['mode_poursuite'])?></span>
+                                <small class="text-muted ms-1"><?=htmlspecialchars($mpLabels[$dossier['mode_poursuite']]??'')?></small>
+                            </div>
+                            <?php endif; ?>
                             <?php if($dossier['date_instruction_debut']): ?>
                             <div class="col-md-6"><small class="text-muted">Début instruction</small><br><strong><?=date('d/m/Y',strtotime($dossier['date_instruction_debut']))?></strong></div>
                             <div class="col-md-6"><small class="text-muted">Juge d'instruction</small><br><strong><?=htmlspecialchars($dossier['juge_instr_prenom']?$dossier['juge_instr_prenom'].' '.$dossier['juge_instr_nom']:'—')?></strong></div>
@@ -522,7 +529,12 @@
         if (inline) {
             // Ouvre le modal avec iframe
             document.getElementById('modalViewTitle').textContent = nom;
-            document.getElementById('viewerFrame').src = url;
+            // Reset d'abord pour forcer le rechargement
+            document.getElementById('viewerFrame').src = 'about:blank';
+            // Petit délai pour s'assurer que l'iframe est bien réinitialisée
+            setTimeout(function () {
+                document.getElementById('viewerFrame').src = url;
+            }, 50);
             // Liens téléchargement / onglet
             var dlLink   = document.getElementById('modalViewDownload');
             var openLink = document.getElementById('modalViewOpen');
@@ -531,13 +543,8 @@
             var modal = new bootstrap.Modal(document.getElementById('modalView'));
             modal.show();
         } else {
-            // Téléchargement direct pour docx, xlsx, odt…
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = nom;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            // Ouvrir dans un nouvel onglet pour les autres formats
+            window.open(url, '_blank');
         }
     };
 

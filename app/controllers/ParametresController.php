@@ -59,6 +59,21 @@ class ParametresController extends Controller
             ]);
         }
 
+        // Si la clé app_base_url est présente, écrire dans app_config.php
+        if (isset($_POST['app_base_url'])) {
+            $appUrl  = trim($_POST['app_base_url']);
+            $content  = "<?php\n";
+            $content .= "// Généré automatiquement depuis la page Paramètres — " . date('Y-m-d H:i:s') . "\n";
+            if (!empty($appUrl)) {
+                $escaped = addslashes(rtrim($appUrl, '/'));
+                $content .= "define('APP_BASE_URL', '{$escaped}');\n";
+            } else {
+                $content .= "// APP_BASE_URL non définie — auto-détection activée\n";
+            }
+            $configFile = ROOT_PATH . DIRECTORY_SEPARATOR . 'app_config.php';
+            @file_put_contents($configFile, $content);
+        }
+
         $this->flash('success', 'Paramètres enregistrés avec succès.');
         $this->redirect('/config/parametres');
     }

@@ -61,13 +61,14 @@ class PVController extends Controller {
     public function create(): void {
         Auth::requireLogin();
         Auth::requireRole(['admin','greffier','procureur','substitut_procureur','president']);
-        $user     = Auth::currentUser();
-        $unites   = $this->db->query("SELECT * FROM unites_enquete WHERE actif=1 ORDER BY nom")->fetchAll();
-        $regions  = $this->db->query("SELECT * FROM regions ORDER BY nom")->fetchAll();
-        $primos   = $this->db->query("SELECT * FROM primo_intervenants WHERE actif=1 ORDER BY nom")->fetchAll();
-        $num      = new Numerotation($this->db);
-        $suggestRG = $num->genererRG();
-        $this->view('pv/create', compact('unites','regions','primos','suggestRG','user'));
+        $user       = Auth::currentUser();
+        $unites     = $this->db->query("SELECT * FROM unites_enquete WHERE actif=1 ORDER BY nom")->fetchAll();
+        $regions    = $this->db->query("SELECT * FROM regions ORDER BY nom")->fetchAll();
+        $primos     = $this->db->query("SELECT * FROM primo_intervenants WHERE actif=1 ORDER BY nom")->fetchAll();
+        $infractions= $this->db->query("SELECT id, code, libelle, categorie FROM infractions ORDER BY libelle")->fetchAll();
+        $num        = new Numerotation($this->db);
+        $suggestRG  = $num->genererRG();
+        $this->view('pv/create', compact('unites','regions','primos','infractions','suggestRG','user'));
     }
 
     public function store(): void {
@@ -78,9 +79,9 @@ class PVController extends Controller {
 
         $stmt = $this->db->prepare(
             "INSERT INTO pv (numero_pv, numero_rg, unite_enquete_id, date_pv, date_reception,
-              type_affaire, est_antiterroriste, region_id, departement_id, commune_id,
+              type_affaire, infraction_id, est_antiterroriste, region_id, departement_id, commune_id,
               description_faits, statut, created_by)
-             VALUES (:pv,:rg,:ue,:dpv,:drec,:type,:anti,:reg,:dep,:com,:desc,'recu',:by)"
+             VALUES (:pv,:rg,:ue,:dpv,:drec,:type,:infr,:anti,:reg,:dep,:com,:desc,'recu',:by)"
         );
         $stmt->execute([
             'pv'   => $this->sanitize($_POST['numero_pv'] ?? ''),
@@ -89,6 +90,7 @@ class PVController extends Controller {
             'dpv'  => $_POST['date_pv'],
             'drec' => $_POST['date_reception'],
             'type' => $_POST['type_affaire'],
+            'infr' => !empty($_POST['infraction_id']) ? (int)$_POST['infraction_id'] : null,
             'anti' => isset($_POST['est_antiterroriste']) ? 1 : 0,
             'reg'  => $_POST['region_id'] ?: null,
             'dep'  => $_POST['departement_id'] ?: null,
@@ -116,30 +118,32 @@ class PVController extends Controller {
         if (!$pv) { $this->redirect('/pv'); }
         $flash = $this->getFlash();
         $user  = Auth::currentUser();
-        $substituts = $this->db->query("SELECT u.* FROM users u JOIN roles r ON u.role_id=r.id WHERE r.code='substitut_procureur' AND u.actif=1")->fetchAll();
-        $cabinets   = $this->db->query("SELECT * FROM cabinets_instruction WHERE actif=1")->fetchAll();
+        $substituts  = $this->db->query("SELECT u.* FROM users u JOIN roles r ON u.role_id=r.id WHERE r.code='substitut_procureur' AND u.actif=1")->fetchAll();
+        $cabinets    = $this->db->query("SELECT * FROM cabinets_instruction WHERE actif=1")->fetchAll();
+        $infractions = $this->db->query("SELECT id, code, libelle, categorie FROM infractions ORDER BY libelle")->fetchAll();
 
         // Dossier lié éventuel
         $dossier = null;
         if ($pv['id']) {
-            $dossier = $this->db->prepare("SELECT * FROM dossiers WHERE pv_id=? LIMIT 1");
-            $dossier->execute([$pv['id']]);
-            $dossier = $dossier->fetch() ?: null;
+            $dossierStmt = $this->db->prepare("SELECT * FROM dossiers WHERE pv_id=? LIMIT 1");
+            $dossierStmt->execute([$pv['id']]);
+            $dossier = $dossierStmt->fetch() ?: null;
         }
 
-        $this->view('pv/show', compact('pv','flash','user','substituts','cabinets','dossier'));
+        $this->view('pv/show', compact('pv','flash','user','substituts','cabinets','infractions','dossier'));
     }
 
     public function edit(string $id): void {
         Auth::requireLogin();
         Auth::requireRole(['admin','greffier','procureur']);
-        $pv       = $this->getPVDetail((int)$id);
+        $pv          = $this->getPVDetail((int)$id);
         if (!$pv) { $this->redirect('/pv'); }
-        $user     = Auth::currentUser();
-        $unites   = $this->db->query("SELECT * FROM unites_enquete WHERE actif=1 ORDER BY nom")->fetchAll();
-        $regions  = $this->db->query("SELECT * FROM regions ORDER BY nom")->fetchAll();
-        $primos   = $this->db->query("SELECT * FROM primo_intervenants WHERE actif=1 ORDER BY nom")->fetchAll();
-        $this->view('pv/edit', compact('pv','unites','regions','primos','user'));
+        $user        = Auth::currentUser();
+        $unites      = $this->db->query("SELECT * FROM unites_enquete WHERE actif=1 ORDER BY nom")->fetchAll();
+        $regions     = $this->db->query("SELECT * FROM regions ORDER BY nom")->fetchAll();
+        $primos      = $this->db->query("SELECT * FROM primo_intervenants WHERE actif=1 ORDER BY nom")->fetchAll();
+        $infractions = $this->db->query("SELECT id, code, libelle, categorie FROM infractions ORDER BY libelle")->fetchAll();
+        $this->view('pv/edit', compact('pv','unites','regions','primos','infractions','user'));
     }
 
     public function update(string $id): void {
@@ -147,7 +151,7 @@ class PVController extends Controller {
         CSRF::check();
         $stmt = $this->db->prepare(
             "UPDATE pv SET numero_pv=:pv, unite_enquete_id=:ue, date_pv=:dpv, date_reception=:drec,
-             type_affaire=:type, est_antiterroriste=:anti, region_id=:reg, departement_id=:dep,
+             type_affaire=:type, infraction_id=:infr, est_antiterroriste=:anti, region_id=:reg, departement_id=:dep,
              commune_id=:com, description_faits=:desc WHERE id=:id"
         );
         $stmt->execute([
@@ -156,6 +160,7 @@ class PVController extends Controller {
             'dpv'  => $_POST['date_pv'],
             'drec' => $_POST['date_reception'],
             'type' => $_POST['type_affaire'],
+            'infr' => !empty($_POST['infraction_id']) ? (int)$_POST['infraction_id'] : null,
             'anti' => isset($_POST['est_antiterroriste']) ? 1 : 0,
             'reg'  => $_POST['region_id'] ?: null,
             'dep'  => $_POST['departement_id'] ?: null,
@@ -239,7 +244,6 @@ class PVController extends Controller {
         Auth::requireRole(['admin','procureur','substitut_procureur']);
 
         $destination = $_POST['destination'] ?? '';
-        $pv = $this->db->prepare("SELECT * FROM pv WHERE id=?")->execute([(int)$id]) ? $this->db->prepare("SELECT * FROM pv WHERE id=?"): null;
         $stmtPV = $this->db->prepare("SELECT * FROM pv WHERE id=?");
         $stmtPV->execute([(int)$id]);
         $pvData = $stmtPV->fetch();
@@ -247,6 +251,13 @@ class PVController extends Controller {
 
         $num  = new Numerotation($this->db);
         $annee = date('Y');
+
+        // Mode de poursuite (uniquement pour instruction)
+        $modePoursuite = 'aucun';
+        if ($destination === 'instruction') {
+            $mp = $_POST['mode_poursuite'] ?? 'aucun';
+            $modePoursuite = in_array($mp, ['aucun','CD','FD','CRCP','RI']) ? $mp : 'aucun';
+        }
 
         // Créer le dossier
         $numeroRG = $num->genererRG($annee);
@@ -262,9 +273,9 @@ class PVController extends Controller {
 
         $ins = $this->db->prepare(
             "INSERT INTO dossiers (pv_id, numero_rg, numero_rp, numero_ri, type_affaire,
-             date_enregistrement, objet, statut, substitut_id, cabinet_id,
+             date_enregistrement, objet, statut, substitut_id, cabinet_id, mode_poursuite,
              date_limite_traitement, date_instruction_debut, created_by)
-             VALUES (:pvid, :rg, :rp, :ri, :type, CURDATE(), :objet, :statut, :sub, :cab, :dlim, :dinst, :by)"
+             VALUES (:pvid, :rg, :rp, :ri, :type, CURDATE(), :objet, :statut, :sub, :cab, :mp, :dlim, :dinst, :by)"
         );
         $ins->execute([
             'pvid'  => (int)$id,
@@ -276,6 +287,7 @@ class PVController extends Controller {
             'statut'=> $statut,
             'sub'   => $pvData['substitut_id'],
             'cab'   => $cabinetId,
+            'mp'    => $modePoursuite,
             'dlim'  => $dateLimite,
             'dinst' => $dateInstDeb,
             'by'    => Auth::userId(),
@@ -283,8 +295,16 @@ class PVController extends Controller {
         $dossierId = (int)$this->db->lastInsertId();
 
         // Historique
+        $modePoursuiteLabel = [
+            'aucun' => 'Aucun', 'CD' => 'Citation Directe', 'FD' => 'Flagrant Délit',
+            'CRCP'  => 'CRCP', 'RI' => 'Réquisitoire Introductif'
+        ][$modePoursuite] ?? $modePoursuite;
+        $histDesc = "Dossier créé depuis PV {$pvData['numero_rg']}";
+        if ($destination === 'instruction') {
+            $histDesc .= " — Mode de poursuite : {$modePoursuiteLabel}";
+        }
         $this->db->prepare("INSERT INTO mouvements_dossier (dossier_id, user_id, type_mouvement, nouveau_statut, description) VALUES (?,?,?,?,?)")
-            ->execute([$dossierId, Auth::userId(), 'creation', $statut, "Dossier créé depuis PV {$pvData['numero_rg']}"]);
+            ->execute([$dossierId, Auth::userId(), 'creation', $statut, $histDesc]);
 
         // Mettre à jour le PV
         $pvStatut = ($destination === 'instruction') ? 'transfere_instruction' : 'transfere_jugement_direct';
@@ -312,7 +332,8 @@ class PVController extends Controller {
             "SELECT p.*, ue.nom as unite_nom, ue.type as unite_type,
                     us.nom as substitut_nom, us.prenom as substitut_prenom,
                     r.nom as region_nom, dep.nom as dept_nom, c.nom as commune_nom,
-                    cb.nom as created_by_nom, cb.prenom as created_by_prenom
+                    cb.nom as created_by_nom, cb.prenom as created_by_prenom,
+                    inf.libelle as infraction_libelle, inf.code as infraction_code, inf.categorie as infraction_categorie
              FROM pv p
              LEFT JOIN unites_enquete ue ON p.unite_enquete_id = ue.id
              LEFT JOIN users us ON p.substitut_id = us.id
@@ -320,6 +341,7 @@ class PVController extends Controller {
              LEFT JOIN departements dep ON p.departement_id = dep.id
              LEFT JOIN communes c ON p.commune_id = c.id
              LEFT JOIN users cb ON p.created_by = cb.id
+             LEFT JOIN infractions inf ON p.infraction_id = inf.id
              WHERE p.id = ?"
         );
         $stmt->execute([$id]);

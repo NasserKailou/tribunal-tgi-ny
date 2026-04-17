@@ -32,6 +32,14 @@
                         <?php if ($pv['est_antiterroriste']): ?><span class="badge bg-dark ms-1"><i class="bi bi-shield-exclamation"></i> Anti-terroriste</span><?php endif; ?>
                     </div>
                     <div class="col-md-6"><small class="text-muted d-block">Unité d'enquête</small><strong><?= htmlspecialchars($pv['unite_nom'] ?? '—') ?></strong></div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Type d'infraction</small>
+                        <?php if (!empty($pv['infraction_libelle'])): ?>
+                        <strong><?= htmlspecialchars($pv['infraction_libelle']) ?></strong>
+                        <?php $catColors = ['criminelle'=>'danger','correctionnelle'=>'warning','contraventionnelle'=>'secondary']; ?>
+                        <span class="badge bg-<?= $catColors[$pv['infraction_categorie']] ?? 'secondary' ?> ms-1"><?= ucfirst($pv['infraction_categorie'] ?? '') ?></span>
+                        <?php else: ?><span class="text-muted">—</span><?php endif; ?>
+                    </div>
                     <div class="col-12"><small class="text-muted d-block">Description des faits</small><p class="mb-0"><?= nl2br(htmlspecialchars($pv['description_faits'] ?? '—')) ?></p></div>
                 </div>
             </div>
@@ -198,7 +206,7 @@
 
 <!-- Modal Transférer -->
 <div class="modal fade" id="modalTransferer" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header"><h5 class="modal-title">Transférer le PV</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
             <form method="POST" action="<?= BASE_URL ?>/pv/transferer/<?= $pv['id'] ?>">
@@ -230,6 +238,21 @@
                             <i class="bi bi-magic me-1"></i>Suggérer le moins chargé
                         </button>
                     </div>
+                    <!-- Mode de poursuite (visible uniquement si instruction) -->
+                    <div id="modePoursuiteBlock" style="display:none" class="mb-3">
+                        <label class="form-label fw-semibold">Mode de poursuite <span class="text-danger">*</span></label>
+                        <select name="mode_poursuite" class="form-select" id="selectModePoursuite">
+                            <option value="aucun">— AUCUN —</option>
+                            <option value="CD">CD — Citation Directe</option>
+                            <option value="FD">FD — Flagrant Délit</option>
+                            <option value="CRCP">CRCP — Comparution sur Reconnaissance Préalable de Culpabilité</option>
+                            <option value="RI">RI — Réquisitoire Introductif</option>
+                        </select>
+                        <div class="form-text text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Choisissez le mode de poursuite pour le dossier d'instruction.
+                        </div>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label">Objet du dossier <span class="text-danger">*</span></label>
                         <textarea name="objet" class="form-control" rows="3" required><?= htmlspecialchars($pv['description_faits']??'') ?></textarea>
@@ -241,7 +264,10 @@
     </div>
 </div>
 <script>
-function toggleCabinet(show){document.getElementById('cabinetBlock').style.display=show?'block':'none';}
+function toggleCabinet(show){
+    document.getElementById('cabinetBlock').style.display=show?'block':'none';
+    document.getElementById('modePoursuiteBlock').style.display=show?'block':'none';
+}
 function suggererCabinet(){
     fetch('<?= BASE_URL ?>/api/cabinets/charge')
     .then(r=>r.json())
