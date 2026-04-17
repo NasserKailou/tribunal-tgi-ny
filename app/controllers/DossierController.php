@@ -266,6 +266,92 @@ class DossierController extends Controller {
     }
 
 
+    // ─────────────────────────────────────────────────────────────
+    // GET /api/dossiers/preview/{id}  — Aperçu rapide (JSON)
+    // ─────────────────────────────────────────────────────────────
+    public function apiPreview(string $id): void {
+        Auth::requireLogin();
+        $id = (int)$id;
+
+        $stmt = $this->db->prepare(
+            "SELECT d.*,
+                    us.nom as substitut_nom, us.prenom as substitut_prenom,
+                    ci.numero as cabinet_num, ci.libelle as cabinet_lib,
+                    ji.nom as juge_instr_nom, ji.prenom as juge_instr_prenom
+             FROM dossiers d
+             LEFT JOIN users us ON d.substitut_id = us.id
+             LEFT JOIN cabinets_instruction ci ON d.cabinet_id = ci.id
+             LEFT JOIN users ji ON ci.juge_id = ji.id
+             WHERE d.id = ?"
+        );
+        $stmt->execute([$id]);
+        $d = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$d) {
+            $this->json(['success' => false, 'message' => 'Dossier introuvable.'], 404);
+            return;
+        }
+
+        // Compter parties, audiences, détenus
+        $nbParties = (int)$this->db->prepare("SELECT COUNT(*) FROM parties WHERE dossier_id=?")
+            ->execute([$id]) ? $this->db->prepare("SELECT COUNT(*) FROM parties WHERE dossier_id=?")->execute([$id]) && 1 : 0;
+        $stmtP = $this->db->prepare("SELECT COUNT(*) FROM parties WHERE dossier_id=?");
+        $stmtP->execute([$id]);
+        $nbParties = (int)$stmtP->fetchColumn();
+
+        $stmtA = $this->db->prepare("SELECT COUNT(*) FROM audiences WHERE dossier_id=?");
+        $stmtA->execute([$id]);
+        $nbAudiences = (int)$stmtA->fetchColumn();
+
+        $stmtJ = $this->db->prepare("SELECT COUNT(*) FROM jugements WHERE dossier_id=?");
+        $stmtJ->execute([$id]);
+        $nbJugements = (int)$stmtJ->fetchColumn();
+
+        $stmtDet = $this->db->prepare("SELECT COUNT(*) FROM detenus WHERE dossier_id=?");
+        $stmtDet->execute([$id]);
+        $nbDetenus = (int)$stmtDet->fetchColumn();
+
+        // Dernier mouvement
+        $stmtM = $this->db->prepare(
+            "SELECT m.type_mouvement, m.description, m.created_at, u.prenom, u.nom
+             FROM mouvements_dossier m
+             LEFT JOIN users u ON m.user_id = u.id
+             WHERE m.dossier_id = ?
+             ORDER BY m.created_at DESC LIMIT 1"
+        );
+        $stmtM->execute([$id]);
+        $dernierMvt = $stmtM->fetch(PDO::FETCH_ASSOC) ?: null;
+
+        $this->json([
+            'success' => true,
+            'data'    => [
+                'id'              => (int)$d['id'],
+                'numero_rg'       => $d['numero_rg'],
+                'numero_rp'       => $d['numero_rp'],
+                'numero_ri'       => $d['numero_ri'],
+                'type_affaire'    => $d['type_affaire'],
+                'statut'          => $d['statut'],
+                'objet'           => $d['objet'],
+                'date_enregistrement' => $d['date_enregistrement'] ? date('d/m/Y', strtotime($d['date_enregistrement'])) : '—',
+                'date_limite_traitement' => $d['date_limite_traitement'] ? date('d/m/Y', strtotime($d['date_limite_traitement'])) : null,
+                'substitut'       => trim(($d['substitut_prenom'] ?? '') . ' ' . ($d['substitut_nom'] ?? '')) ?: '—',
+                'cabinet'         => $d['cabinet_num'] ? ($d['cabinet_num'] . ' — ' . $d['cabinet_lib']) : '—',
+                'juge_instruction'=> $d['juge_instr_prenom'] ? ($d['juge_instr_prenom'] . ' ' . $d['juge_instr_nom']) : '—',
+                'mode_poursuite'  => $d['mode_poursuite'] ?? null,
+                'nb_parties'      => $nbParties,
+                'nb_audiences'    => $nbAudiences,
+                'nb_jugements'    => $nbJugements,
+                'nb_detenus'      => $nbDetenus,
+                'dernier_mouvement' => $dernierMvt ? [
+                    'type'        => $dernierMvt['type_mouvement'],
+                    'description' => $dernierMvt['description'],
+                    'date'        => date('d/m/Y H:i', strtotime($dernierMvt['created_at'])),
+                    'user'        => trim(($dernierMvt['prenom'] ?? '') . ' ' . ($dernierMvt['nom'] ?? '')),
+                ] : null,
+            ],
+        ]);
+    }
+
     private function getDossierDetail(int $id): ?array {
         $stmt = $this->db->prepare(
             "SELECT d.*,

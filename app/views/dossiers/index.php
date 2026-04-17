@@ -65,7 +65,19 @@
                     ?>
                 </td>
                 <td class="text-end">
-                    <a href="<?=BASE_URL?>/dossiers/show/<?=$d['id']?>" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                    <!-- Aperçu rapide (popup) -->
+                    <button type="button"
+                            class="btn btn-sm btn-outline-info me-1"
+                            title="Aperçu rapide"
+                            onclick="ouvrirApercuDossier(<?=$d['id']?>, '<?=htmlspecialchars($d['numero_rg'],ENT_QUOTES)?>')">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <!-- Ouvrir la fiche complète -->
+                    <a href="<?=BASE_URL?>/dossiers/show/<?=$d['id']?>"
+                       class="btn btn-sm btn-outline-primary"
+                       title="Fiche complète">
+                        <i class="bi bi-folder2-open"></i>
+                    </a>
                 </td>
             </tr>
             <?php endforeach; ?>
@@ -82,3 +94,201 @@
         <?php endif; ?>
     </div>
 </div>
+
+<!-- ============================================================
+     Modal Aperçu Rapide Dossier
+============================================================ -->
+<div class="modal fade" id="modalApercuDossier" tabindex="-1" aria-labelledby="modalApercuLabel">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white py-2">
+                <h5 class="modal-title" id="modalApercuLabel">
+                    <i class="bi bi-folder2-open me-2"></i><span id="apercuTitle">Chargement…</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="apercuBody">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <div class="mt-2 text-muted">Chargement en cours…</div>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Fermer</button>
+                <a id="apercuLienComplet" href="#" class="btn btn-primary btn-sm">
+                    <i class="bi bi-folder2-open me-1"></i>Ouvrir la fiche complète
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    var BASE_URL = '<?= BASE_URL ?>';
+    var modal    = null;
+
+    /* ---- Libellés statut ---- */
+    var STATUTS = {
+        enregistre   : ['secondary', 'Enregistré'],
+        parquet      : ['warning',   'Parquet'],
+        instruction  : ['info',      'Instruction'],
+        en_instruction: ['info',     'En instruction'],
+        en_audience  : ['primary',   'En audience'],
+        juge         : ['success',   'Jugé'],
+        classe       : ['dark',      'Classé'],
+        appel        : ['danger',    'Appel']
+    };
+
+    var MODES_POURSUITE = {
+        aucun : '—',
+        CD    : 'Citation Directe (CD)',
+        FD    : 'Flagrant Délit (FD)',
+        CRCP  : 'CRCP',
+        RI    : 'Réquisitoire Introductif (RI)'
+    };
+
+    window.ouvrirApercuDossier = function (id, rg) {
+        /* Initialiser le modal Bootstrap une seule fois */
+        if (!modal) {
+            modal = new bootstrap.Modal(document.getElementById('modalApercuDossier'));
+        }
+
+        /* Titre provisoire + spinner */
+        document.getElementById('apercuTitle').textContent = rg;
+        document.getElementById('apercuBody').innerHTML =
+            '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div>' +
+            '<div class="mt-2 text-muted">Chargement en cours…</div></div>';
+        document.getElementById('apercuLienComplet').href = BASE_URL + '/dossiers/show/' + id;
+
+        modal.show();
+
+        /* Charger les données */
+        fetch(BASE_URL + '/api/dossiers/preview/' + id, { credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (res) {
+                if (!res.success) {
+                    document.getElementById('apercuBody').innerHTML =
+                        '<div class="alert alert-danger m-3">' + escHtml(res.message || 'Erreur inconnue.') + '</div>';
+                    return;
+                }
+                renderApercu(res.data);
+            })
+            .catch(function () {
+                document.getElementById('apercuBody').innerHTML =
+                    '<div class="alert alert-danger m-3">Erreur réseau — impossible de charger l\'aperçu.</div>';
+            });
+    };
+
+    function renderApercu(d) {
+        var statutInfo = STATUTS[d.statut] || ['secondary', d.statut];
+        var badgeType  = d.type_affaire === 'penale' ? 'danger' : (d.type_affaire === 'civile' ? 'primary' : 'success');
+
+        /* Indicateur date limite */
+        var dlHtml = '—';
+        if (d.date_limite_traitement) {
+            var dlParts = d.date_limite_traitement.split('/');
+            var dlDate  = new Date(dlParts[2], dlParts[1] - 1, dlParts[0]);
+            var now     = new Date();
+            var diff    = (dlDate - now) / 86400000;
+            var couleur = diff < 0 ? 'text-danger fw-bold' : (diff < 7 ? 'text-warning fw-bold' : 'text-success');
+            var retardBadge = diff < 0 ? ' <span class="badge bg-danger">En retard</span>' : (diff < 7 ? ' <span class="badge bg-warning text-dark">Bientôt</span>' : '');
+            dlHtml = '<span class="' + couleur + '">' + escHtml(d.date_limite_traitement) + '</span>' + retardBadge;
+        }
+
+        /* Mode de poursuite */
+        var mpHtml = '—';
+        if (d.mode_poursuite && d.mode_poursuite !== 'aucun') {
+            mpHtml = '<span class="badge bg-info text-dark">' + escHtml(d.mode_poursuite) + '</span>' +
+                     ' <small class="text-muted">' + escHtml(MODES_POURSUITE[d.mode_poursuite] || d.mode_poursuite) + '</small>';
+        }
+
+        /* Dernier mouvement */
+        var mvtHtml = '<span class="text-muted small">Aucun mouvement enregistré</span>';
+        if (d.dernier_mouvement) {
+            var m = d.dernier_mouvement;
+            mvtHtml = '<span class="badge bg-secondary me-1">' + escHtml(m.type) + '</span>' +
+                      '<small class="text-muted">' + escHtml(m.description || '') + ' — ' +
+                      escHtml(m.user) + ' (' + escHtml(m.date) + ')</small>';
+        }
+
+        var html = [
+            '<!-- En-tête identité -->',
+            '<div class="d-flex align-items-center gap-3 mb-3 p-3 bg-light rounded">',
+            '  <div>',
+            '    <h5 class="fw-bold mb-1">' + escHtml(d.numero_rg) + '</h5>',
+            '    <div class="d-flex gap-1 flex-wrap">',
+            d.numero_rp ? '<span class="badge bg-warning text-dark">RP : ' + escHtml(d.numero_rp) + '</span>' : '',
+            d.numero_ri ? '<span class="badge bg-info text-dark">RI : ' + escHtml(d.numero_ri) + '</span>' : '',
+            '      <span class="badge bg-' + badgeType + '">' + escHtml(d.type_affaire) + '</span>',
+            '      <span class="badge bg-' + statutInfo[0] + '">' + escHtml(statutInfo[1]) + '</span>',
+            '    </div>',
+            '  </div>',
+            '</div>',
+
+            '<!-- Informations principales -->',
+            '<div class="row g-3 mb-3">',
+            '  <div class="col-sm-6"><small class="text-muted d-block">Objet</small><p class="mb-0 small">' + escHtml(d.objet) + '</p></div>',
+            '  <div class="col-sm-6"><small class="text-muted d-block">Date d\'enregistrement</small><strong>' + escHtml(d.date_enregistrement) + '</strong></div>',
+            '  <div class="col-sm-6"><small class="text-muted d-block">Substitut</small><strong>' + escHtml(d.substitut) + '</strong></div>',
+            '  <div class="col-sm-6"><small class="text-muted d-block">Cabinet d\'instruction</small><strong>' + escHtml(d.cabinet) + '</strong></div>',
+            d.juge_instruction && d.juge_instruction !== '—'
+                ? '<div class="col-sm-6"><small class="text-muted d-block">Juge d\'instruction</small><strong>' + escHtml(d.juge_instruction) + '</strong></div>'
+                : '',
+            '  <div class="col-sm-6"><small class="text-muted d-block">Date limite traitement</small>' + dlHtml + '</div>',
+            d.mode_poursuite && d.mode_poursuite !== 'aucun'
+                ? '<div class="col-sm-6"><small class="text-muted d-block">Mode de poursuite</small>' + mpHtml + '</div>'
+                : '',
+            '</div>',
+
+            '<!-- Compteurs -->',
+            '<div class="row g-2 mb-3">',
+            '  <div class="col-6 col-md-3">',
+            '    <div class="card border-0 bg-light text-center py-2">',
+            '      <div class="fw-bold fs-4 text-primary">' + d.nb_parties + '</div>',
+            '      <small class="text-muted">Partie(s)</small>',
+            '    </div>',
+            '  </div>',
+            '  <div class="col-6 col-md-3">',
+            '    <div class="card border-0 bg-light text-center py-2">',
+            '      <div class="fw-bold fs-4 text-info">' + d.nb_audiences + '</div>',
+            '      <small class="text-muted">Audience(s)</small>',
+            '    </div>',
+            '  </div>',
+            '  <div class="col-6 col-md-3">',
+            '    <div class="card border-0 bg-light text-center py-2">',
+            '      <div class="fw-bold fs-4 text-success">' + d.nb_jugements + '</div>',
+            '      <small class="text-muted">Jugement(s)</small>',
+            '    </div>',
+            '  </div>',
+            '  <div class="col-6 col-md-3">',
+            '    <div class="card border-0 bg-light text-center py-2">',
+            '      <div class="fw-bold fs-4 text-danger">' + d.nb_detenus + '</div>',
+            '      <small class="text-muted">Détenu(s)</small>',
+            '    </div>',
+            '  </div>',
+            '</div>',
+
+            '<!-- Dernier mouvement -->',
+            '<div class="border-top pt-3">',
+            '  <small class="text-muted d-block mb-1"><i class="bi bi-clock-history me-1"></i>Dernier mouvement</small>',
+            '  ' + mvtHtml,
+            '</div>',
+        ].join('\n');
+
+        document.getElementById('apercuTitle').textContent = d.numero_rg;
+        document.getElementById('apercuBody').innerHTML = html;
+    }
+
+    function escHtml(str) {
+        if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+})();
+</script>

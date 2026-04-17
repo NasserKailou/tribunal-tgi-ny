@@ -42,13 +42,20 @@ function isActive(string $prefix, string $currentPath): string {
             <i class="bi bi-speedometer2"></i><span>Tableau de bord</span>
         </a>
 
-        <div class="sidebar-section">Judiciaire</div>
+        <!-- ══════════ PARQUET ══════════ -->
+        <div class="sidebar-section">Parquet</div>
         <a href="<?= BASE_URL ?>/pv" class="sidebar-link <?= isActive('/pv', $currentPath) ?>">
             <i class="bi bi-file-text"></i><span>Procès-Verbaux</span>
         </a>
+
+        <!-- ══════════ CABINET D'INSTRUCTION ══════════ -->
+        <div class="sidebar-section">Cabinet d'Instruction</div>
         <a href="<?= BASE_URL ?>/dossiers" class="sidebar-link <?= isActive('/dossiers', $currentPath) ?>">
             <i class="bi bi-folder2-open"></i><span>Dossiers</span>
         </a>
+
+        <!-- ══════════ JUGEMENT & AUDIENCE ══════════ -->
+        <div class="sidebar-section">Jugement &amp; Audience</div>
         <a href="<?= BASE_URL ?>/audiences" class="sidebar-link <?= isActive('/audiences', $currentPath) ?>">
             <i class="bi bi-calendar-week"></i><span>Audiences</span>
         </a>
@@ -56,20 +63,23 @@ function isActive(string $prefix, string $currentPath): string {
             <i class="bi bi-hammer"></i><span>Jugements</span>
         </a>
 
-        <div class="sidebar-section">Détention</div>
+        <!-- ══════════ DÉTENTION & MANDATS ══════════ -->
+        <div class="sidebar-section">Détention &amp; Mandats</div>
         <a href="<?= BASE_URL ?>/detenus" class="sidebar-link <?= isActive('/detenus', $currentPath) ?>">
             <i class="bi bi-person-lock"></i><span>Population Carcérale</span>
         </a>
-
-        <div class="sidebar-section">Sécurité</div>
         <a href="<?= BASE_URL ?>/mandats" class="sidebar-link <?= isActive('/mandats', $currentPath) ?>">
             <i class="bi bi-file-ruled" style="color:#ef4444"></i><span>Mandats de Justice</span>
         </a>
+
+        <!-- ══════════ SÉCURITÉ ══════════ -->
+        <div class="sidebar-section">Sécurité</div>
         <a href="<?= BASE_URL ?>/carte" class="sidebar-link <?= isActive('/carte', $currentPath) ?>">
             <i class="bi bi-map"></i><span>Carte Antiterroriste</span>
         </a>
 
-        <div class="sidebar-section">Système</div>
+        <!-- ══════════ CONFIGURATION SYSTÈME ══════════ -->
+        <div class="sidebar-section">Configuration Système</div>
         <a href="<?= BASE_URL ?>/alertes" class="sidebar-link <?= isActive('/alertes', $currentPath) ?> d-flex justify-content-between align-items-center">
             <span><i class="bi bi-bell"></i> Alertes</span>
             <?php if ($nbAlertes > 0): ?>

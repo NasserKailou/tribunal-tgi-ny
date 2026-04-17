@@ -203,6 +203,9 @@ $router->post('/admin/droits/save/{userId}',             'DroitsController@saveU
 $router->get('/api/cabinets/charge',                     'ConfigController@apiCabinetsCharge');
 $router->get('/api/substituts/charge',                   'ConfigController@apiSubstitutsCharge');
 
+// API aperçu rapide dossier
+$router->get('/api/dossiers/preview/{id}',               'DossierController@apiPreview');
+
 // PV déclassement
 $router->post('/pv/declasser/{id}',                      'PVController@declasser');
 
