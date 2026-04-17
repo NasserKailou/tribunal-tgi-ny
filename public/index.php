@@ -209,6 +209,78 @@ $router->get('/api/dossiers/preview/{id}',               'DossierController@apiP
 // PV déclassement
 $router->post('/pv/declasser/{id}',                      'PVController@declasser');
 
+// ─── Avocats / Barreau ────────────────────────────────────────────────────────
+$router->get( '/avocats',                    'AvocatController@index');
+$router->get( '/avocats/create',             'AvocatController@create');
+$router->post('/avocats/store',              'AvocatController@store');
+$router->get( '/avocats/show/{id}',          'AvocatController@show');
+$router->get( '/avocats/edit/{id}',          'AvocatController@edit');
+$router->post('/avocats/update/{id}',        'AvocatController@update');
+$router->post('/avocats/toggle/{id}',        'AvocatController@toggle');
+$router->get( '/api/avocats/search',         'AvocatController@apiSearch');
+
+// ─── Ordonnances JI ───────────────────────────────────────────────────────────
+$router->get( '/ordonnances',                'OrdonnanceController@index');
+$router->get( '/ordonnances/create',         'OrdonnanceController@create');
+$router->post('/ordonnances/store',          'OrdonnanceController@store');
+$router->get( '/ordonnances/show/{id}',      'OrdonnanceController@show');
+$router->get( '/ordonnances/edit/{id}',      'OrdonnanceController@edit');
+$router->post('/ordonnances/update/{id}',    'OrdonnanceController@update');
+$router->post('/ordonnances/signer/{id}',    'OrdonnanceController@signer');
+$router->post('/ordonnances/notifier/{id}',  'OrdonnanceController@notifier');
+
+// ─── Voies de recours (Appel, Cassation, Opposition) ─────────────────────────
+$router->get( '/voies-recours',              'VoieRecoursController@index');
+$router->get( '/voies-recours/create',       'VoieRecoursController@create');
+$router->post('/voies-recours/store',        'VoieRecoursController@store');
+$router->get( '/voies-recours/show/{id}',    'VoieRecoursController@show');
+$router->get( '/voies-recours/edit/{id}',    'VoieRecoursController@edit');
+$router->post('/voies-recours/update/{id}',  'VoieRecoursController@update');
+$router->post('/voies-recours/clore/{id}',   'VoieRecoursController@clore');
+
+// ─── Contrôle judiciaire & Liberté provisoire ────────────────────────────────
+$router->get( '/controles-judiciaires',            'ControleJudiciairController@index');
+$router->get( '/controles-judiciaires/create',     'ControleJudiciairController@create');
+$router->post('/controles-judiciaires/store',      'ControleJudiciairController@store');
+$router->get( '/controles-judiciaires/show/{id}',  'ControleJudiciairController@show');
+$router->get( '/controles-judiciaires/edit/{id}',  'ControleJudiciairController@edit');
+$router->post('/controles-judiciaires/update/{id}','ControleJudiciairController@update');
+$router->post('/controles-judiciaires/lever/{id}', 'ControleJudiciairController@lever');
+$router->post('/controles-judiciaires/violation/{id}','ControleJudiciairController@violation');
+
+// ─── Expertise judiciaire ─────────────────────────────────────────────────────
+$router->get( '/expertises',                 'ExpertiseController@index');
+$router->get( '/expertises/create',          'ExpertiseController@create');
+$router->post('/expertises/store',           'ExpertiseController@store');
+$router->get( '/expertises/show/{id}',       'ExpertiseController@show');
+$router->get( '/expertises/edit/{id}',       'ExpertiseController@edit');
+$router->post('/expertises/update/{id}',     'ExpertiseController@update');
+$router->post('/expertises/deposer/{id}',    'ExpertiseController@deposer');
+
+// ─── Commissions Rogatoires ───────────────────────────────────────────────────
+$router->get( '/commissions-rogatoires',             'CommissionRogatoireController@index');
+$router->get( '/commissions-rogatoires/create',      'CommissionRogatoireController@create');
+$router->post('/commissions-rogatoires/store',       'CommissionRogatoireController@store');
+$router->get( '/commissions-rogatoires/show/{id}',   'CommissionRogatoireController@show');
+$router->get( '/commissions-rogatoires/edit/{id}',   'CommissionRogatoireController@edit');
+$router->post('/commissions-rogatoires/update/{id}', 'CommissionRogatoireController@update');
+$router->post('/commissions-rogatoires/retour/{id}', 'CommissionRogatoireController@retour');
+
+// ─── Gestion des Scellés ──────────────────────────────────────────────────────
+$router->get( '/scelles',                    'ScelleController@index');
+$router->get( '/scelles/create',             'ScelleController@create');
+$router->post('/scelles/store',              'ScelleController@store');
+$router->get( '/scelles/show/{id}',          'ScelleController@show');
+$router->get( '/scelles/edit/{id}',          'ScelleController@edit');
+$router->post('/scelles/update/{id}',        'ScelleController@update');
+$router->post('/scelles/restituer/{id}',     'ScelleController@restituer');
+$router->post('/scelles/detruire/{id}',      'ScelleController@detruire');
+
+// ─── Casier judiciaire ────────────────────────────────────────────────────────
+$router->get( '/casier-judiciaire',          'CasierJudiciairController@index');
+$router->get( '/casier-judiciaire/show/{id}','CasierJudiciairController@show');
+$router->post('/casier-judiciaire/ajouter',  'CasierJudiciairController@ajouter');
+
 $router->dispatch();
 
 // Envoyer la réponse HTML bufferisée (les réponses JSON ont déjà appelé exit)

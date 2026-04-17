@@ -47,11 +47,32 @@ function isActive(string $prefix, string $currentPath): string {
         <a href="<?= BASE_URL ?>/pv" class="sidebar-link <?= isActive('/pv', $currentPath) ?>">
             <i class="bi bi-file-text"></i><span>Procès-Verbaux</span>
         </a>
+        <a href="<?= BASE_URL ?>/avocats" class="sidebar-link <?= isActive('/avocats', $currentPath) ?>">
+            <i class="bi bi-person-badge"></i><span>Barreau / Avocats</span>
+        </a>
+        <a href="<?= BASE_URL ?>/casier-judiciaire" class="sidebar-link <?= isActive('/casier-judiciaire', $currentPath) ?>">
+            <i class="bi bi-person-vcard"></i><span>Casier judiciaire</span>
+        </a>
 
         <!-- ══════════ CABINET D'INSTRUCTION ══════════ -->
         <div class="sidebar-section">Cabinet d'Instruction</div>
         <a href="<?= BASE_URL ?>/dossiers" class="sidebar-link <?= isActive('/dossiers', $currentPath) ?>">
             <i class="bi bi-folder2-open"></i><span>Dossiers</span>
+        </a>
+        <a href="<?= BASE_URL ?>/ordonnances" class="sidebar-link <?= isActive('/ordonnances', $currentPath) ?>">
+            <i class="bi bi-file-earmark-text"></i><span>Ordonnances JI</span>
+        </a>
+        <a href="<?= BASE_URL ?>/controles-judiciaires" class="sidebar-link <?= isActive('/controles-judiciaires', $currentPath) ?>">
+            <i class="bi bi-shield-check"></i><span>Contrôles judiciaires</span>
+        </a>
+        <a href="<?= BASE_URL ?>/expertises" class="sidebar-link <?= isActive('/expertises', $currentPath) ?>">
+            <i class="bi bi-microscope"></i><span>Expertises</span>
+        </a>
+        <a href="<?= BASE_URL ?>/commissions-rogatoires" class="sidebar-link <?= isActive('/commissions-rogatoires', $currentPath) ?>">
+            <i class="bi bi-send"></i><span>Commissions rogatoires</span>
+        </a>
+        <a href="<?= BASE_URL ?>/scelles" class="sidebar-link <?= isActive('/scelles', $currentPath) ?>">
+            <i class="bi bi-archive"></i><span>Scellés</span>
         </a>
 
         <!-- ══════════ JUGEMENT & AUDIENCE ══════════ -->
@@ -61,6 +82,9 @@ function isActive(string $prefix, string $currentPath): string {
         </a>
         <a href="<?= BASE_URL ?>/jugements" class="sidebar-link <?= isActive('/jugements', $currentPath) ?>">
             <i class="bi bi-hammer"></i><span>Jugements</span>
+        </a>
+        <a href="<?= BASE_URL ?>/voies-recours" class="sidebar-link <?= isActive('/voies-recours', $currentPath) ?>">
+            <i class="bi bi-arrow-repeat"></i><span>Voies de recours</span>
         </a>
 
         <!-- ══════════ DÉTENTION & MANDATS ══════════ -->
