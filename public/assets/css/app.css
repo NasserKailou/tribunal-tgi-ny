@@ -490,9 +490,8 @@ body {
     flex-shrink: 0;
 }
 
-/* Stats cards */
+/* Stats cards — ne pas écraser le background gradient des variantes couleur */
 .stat-card {
-    background: #fff;
     border-radius: var(--radius-md);
     border: none;
     box-shadow: var(--shadow-sm);

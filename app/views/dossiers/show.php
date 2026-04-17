@@ -558,7 +558,10 @@
         fetch(BASE_URL + '/documents/delete/' + id, {
             method: 'POST',
             credentials: 'same-origin',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             body: '_csrf=' + encodeURIComponent(CSRF_TOKEN)
         })
         .then(function (r) { return r.json(); })
@@ -606,6 +609,7 @@
         var xhr = new XMLHttpRequest();
         xhr.open('POST', BASE_URL + '/documents/upload/' + DOSSIER_ID);
         xhr.withCredentials = true;
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
         xhr.upload.addEventListener('progress', function (e) {
             if (e.lengthComputable) {

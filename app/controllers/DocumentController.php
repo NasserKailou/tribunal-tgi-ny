@@ -5,7 +5,7 @@
  * Routes :
  *   POST /documents/upload/{dossierId}  → upload()
  *   POST /documents/delete/{id}         → delete()
- *   GET  /documents/view/{id}           → view()
+ *   GET  /documents/view/{id}           → serve()
  *   GET  /documents/list/{dossierId}    → list()
  *
  * Contraintes :
@@ -194,7 +194,7 @@ class DocumentController extends Controller
     // ----------------------------------------------------------------
     // GET /documents/view/{id}
     // ----------------------------------------------------------------
-    public function view(string $id): void
+    public function serve(string $id): void
     {
         Auth::requireLogin();
 

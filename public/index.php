@@ -137,7 +137,7 @@ $router->get('/api/alertes-count',     'AlerteController@apiCount');
 // Documents / Pièces jointes
 $router->post('/documents/upload/{dossierId}',  'DocumentController@upload');
 $router->post('/documents/delete/{id}',          'DocumentController@delete');
-$router->get('/documents/view/{id}',             'DocumentController@view');
+$router->get('/documents/view/{id}',             'DocumentController@serve');
 $router->get('/documents/list/{dossierId}',      'DocumentController@list');
 
 // Utilisateurs (admin)
