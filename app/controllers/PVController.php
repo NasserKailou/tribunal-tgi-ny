@@ -253,7 +253,7 @@ class PVController extends Controller {
         $numeroRP = $num->genererRP($annee);
         $numeroRI = ($destination === 'instruction') ? $num->genererRI($annee) : null;
 
-        $statut   = ($destination === 'instruction') ? 'instruction' : 'en_audience';
+        $statut   = ($destination === 'instruction') ? 'en_instruction' : 'en_audience';
         $cabinetId = ($destination === 'instruction') ? ($_POST['cabinet_id'] ?: null) : null;
         $dateInstDeb = ($destination === 'instruction') ? date('Y-m-d') : null;
         $dateLimite  = ($destination === 'instruction') 

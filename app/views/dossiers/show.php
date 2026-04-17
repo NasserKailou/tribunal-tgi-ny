@@ -7,7 +7,7 @@
             <div class="d-flex gap-2 mt-1">
                 <?php if($dossier['numero_rp']): ?><span class="badge bg-warning text-dark">RP: <?=htmlspecialchars($dossier['numero_rp'])?></span><?php endif; ?>
                 <?php if($dossier['numero_ri']): ?><span class="badge bg-info text-dark">RI: <?=htmlspecialchars($dossier['numero_ri'])?></span><?php endif; ?>
-                <?php $sm=['enregistre'=>['secondary','Enregistré'],'parquet'=>['warning','Parquet'],'instruction'=>['info','Instruction'],'en_audience'=>['primary','Audience'],'juge'=>['success','Jugé'],'classe'=>['dark','Classé'],'appel'=>['danger','Appel']];[$sc,$sl]=$sm[$dossier['statut']]??['secondary',$dossier['statut']]; ?>
+                <?php $sm=['enregistre'=>['secondary','Enregistré'],'parquet'=>['warning','Parquet'],'instruction'=>['info','Instruction'],'en_instruction'=>['info','En instruction'],'en_audience'=>['primary','Audience'],'juge'=>['success','Jugé'],'classe'=>['dark','Classé'],'appel'=>['danger','Appel']];[$sc,$sl]=$sm[$dossier['statut']]??['secondary',$dossier['statut']]; ?>
                 <span class="badge bg-<?=$sc?> fs-6"><?=$sl?></span>
             </div>
         </div>
@@ -59,14 +59,14 @@
             </div>
             <div class="col-lg-4">
                 <!-- Actions workflow -->
-                <?php if(in_array($dossier['statut'],['parquet','instruction'])): ?>
+                <?php if(in_array($dossier['statut'],['parquet','instruction','en_instruction'])): ?>
                 <div class="card border-0 shadow-sm mb-3">
                     <div class="card-header bg-white fw-semibold"><i class="bi bi-play-circle me-2 text-primary"></i>Actions</div>
                     <div class="card-body d-grid gap-2">
                         <?php if($dossier['statut']==='parquet' && Auth::hasRole(['admin','procureur','substitut_procureur','president'])): ?>
                         <button class="btn btn-info text-dark" data-bs-toggle="modal" data-bs-target="#modalInstruction"><i class="bi bi-send me-2"></i>Envoyer en instruction</button>
                         <?php endif; ?>
-                        <?php if(in_array($dossier['statut'],['parquet','instruction']) && Auth::hasRole(['admin','procureur','juge_instruction','president'])): ?>
+                        <?php if(in_array($dossier['statut'],['parquet','instruction','en_instruction']) && Auth::hasRole(['admin','procureur','juge_instruction','president'])): ?>
                         <form method="POST" action="<?=BASE_URL?>/dossiers/envoyer-audience/<?=$dossier['id']?>" onsubmit="return confirm('Envoyer en audience ?')">
                             <?=CSRF::field()?>
                             <button type="submit" class="btn btn-primary w-100"><i class="bi bi-calendar-plus me-2"></i>Envoyer en audience</button>
@@ -78,7 +78,7 @@
                     </div>
                 </div>
                 <?php endif; ?>
-                <?php if(in_array($dossier['statut'],['parquet','instruction','en_audience']) && Auth::hasRole(['admin','procureur','substitut_procureur'])): ?>
+                <?php if(in_array($dossier['statut'],['parquet','instruction','en_instruction','en_audience']) && Auth::hasRole(['admin','procureur','substitut_procureur'])): ?>
                 <div class="card border-0 shadow-sm mb-3">
                     <div class="card-header bg-white fw-semibold"><i class="bi bi-archive text-secondary me-2"></i>Classement</div>
                     <div class="card-body d-grid gap-2">

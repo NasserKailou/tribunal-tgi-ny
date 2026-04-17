@@ -16,7 +16,7 @@
             <div class="col-md-2">
                 <select name="statut" class="form-select">
                     <option value="">Tous statuts</option>
-                    <?php foreach(['enregistre'=>'Enregistré','parquet'=>'Parquet','instruction'=>'Instruction','en_audience'=>'En audience','juge'=>'Jugé','classe'=>'Classé','appel'=>'Appel'] as $v=>$l): ?>
+                    <?php foreach(['enregistre'=>'Enregistré','parquet'=>'Parquet','instruction'=>'Instruction','en_instruction'=>'En instruction','en_audience'=>'En audience','juge'=>'Jugé','classe'=>'Classé','appel'=>'Appel'] as $v=>$l): ?>
                     <option value="<?=$v?>" <?=$statut===$v?'selected':''?>><?=$l?></option>
                     <?php endforeach; ?>
                 </select>
@@ -58,7 +58,7 @@
                 <td class="small"><?=htmlspecialchars($d['cabinet_num']??'—')?></td>
                 <td>
                     <?php
-                    $sm=['enregistre'=>['secondary','Enregistré'],'parquet'=>['warning','Parquet'],'instruction'=>['info','Instruction'],'en_audience'=>['primary','Audience'],'juge'=>['success','Jugé'],'classe'=>['dark','Classé'],'appel'=>['danger','Appel']];
+                    $sm=['enregistre'=>['secondary','Enregistré'],'parquet'=>['warning','Parquet'],'instruction'=>['info','Instruction'],'en_instruction'=>['info','En instruction'],'en_audience'=>['primary','Audience'],'juge'=>['success','Jugé'],'classe'=>['dark','Classé'],'appel'=>['danger','Appel']];
                     [$sc,$sl]=$sm[$d['statut']]??['secondary',$d['statut']];
                     echo "<span class=\"badge bg-{$sc}\">{$sl}</span>";
                     if($d['nb_audiences']>0) echo " <span class=\"badge bg-light text-dark border\"><i class=\"bi bi-calendar\"></i> {$d['nb_audiences']}</span>";

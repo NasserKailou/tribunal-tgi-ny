@@ -30,7 +30,7 @@
                     <label class="form-label fw-semibold">Statut</label>
                     <select name="statut" class="form-select">
                         <?php
-                        $statuts = ['parquet'=>'Parquet','instruction'=>'En instruction','en_audience'=>'En audience','juge'=>'Jugé','classe'=>'Classé','appel'=>'En appel','archive'=>'Archivé'];
+                        $statuts = ['parquet'=>'Parquet','instruction'=>'Instruction (legacy)','en_instruction'=>'En instruction','en_audience'=>'En audience','juge'=>'Jugé','classe'=>'Classé','appel'=>'En appel','archive'=>'Archivé'];
                         foreach($statuts as $val=>$lib):
                         ?>
                         <option value="<?=$val?>" <?=$dossier['statut']===$val?'selected':''?>><?=$lib?></option>

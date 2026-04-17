@@ -2,8 +2,8 @@
 /**
  * vue config/cabinet_dossiers.php — Dossiers et PVs assignés à un cabinet
  */
-$statutLabels = ['enregistre'=>'Enregistré','parquet'=>'Parquet','instruction'=>'Instruction','en_audience'=>'Audience','juge'=>'Jugé','classe'=>'Classé','appel'=>'Appel'];
-$statutCls    = ['enregistre'=>'secondary','parquet'=>'warning','instruction'=>'info','en_audience'=>'primary','juge'=>'success','classe'=>'dark','appel'=>'danger'];
+$statutLabels = ['enregistre'=>'Enregistré','parquet'=>'Parquet','instruction'=>'Instruction','en_instruction'=>'En instruction','en_audience'=>'Audience','juge'=>'Jugé','classe'=>'Classé','appel'=>'Appel'];
+$statutCls    = ['enregistre'=>'secondary','parquet'=>'warning','instruction'=>'info','en_instruction'=>'info','en_audience'=>'primary','juge'=>'success','classe'=>'dark','appel'=>'danger'];
 ?>
 <div class="mb-4">
     <nav aria-label="breadcrumb">

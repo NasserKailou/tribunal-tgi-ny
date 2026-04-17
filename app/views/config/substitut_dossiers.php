@@ -2,8 +2,8 @@
 /**
  * vue config/substitut_dossiers.php — Dossiers et PVs assignés à un substitut
  */
-$statutLabels = ['enregistre'=>'Enregistré','parquet'=>'Parquet','instruction'=>'Instruction','en_audience'=>'Audience','juge'=>'Jugé','classe'=>'Classé','appel'=>'Appel'];
-$statutCls    = ['enregistre'=>'secondary','parquet'=>'warning','instruction'=>'info','en_audience'=>'primary','juge'=>'success','classe'=>'dark','appel'=>'danger'];
+$statutLabels = ['enregistre'=>'Enregistré','parquet'=>'Parquet','instruction'=>'Instruction','en_instruction'=>'En instruction','en_audience'=>'Audience','juge'=>'Jugé','classe'=>'Classé','appel'=>'Appel'];
+$statutCls    = ['enregistre'=>'secondary','parquet'=>'warning','instruction'=>'info','en_instruction'=>'info','en_audience'=>'primary','juge'=>'success','classe'=>'dark','appel'=>'danger'];
 $pvStatutLabels = ['recu'=>'Reçu','en_traitement'=>'En traitement','classe'=>'Classé','transfere_instruction'=>'→ Instruction','transfere_jugement_direct'=>'→ Audience'];
 ?>
 <div class="mb-4">

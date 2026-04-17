@@ -72,7 +72,7 @@ class DossierController extends Controller {
              date_limite_traitement, date_instruction_debut, created_by)
              VALUES (:pvid,:rg,:rp,:ri,:type,:date,:objet,:statut,:sub,:cab,:dlim,:dinst,:by)"
         );
-        $statut  = $cabinetId ? 'instruction' : 'parquet';
+        $statut  = $cabinetId ? 'en_instruction' : 'parquet';
         $dinst   = $cabinetId ? date('Y-m-d') : null;
         $dlim    = $cabinetId ? date('Y-m-d', strtotime('+6 months')) : date('Y-m-d', strtotime('+30 days'));
         $stmt->execute([
@@ -174,11 +174,11 @@ class DossierController extends Controller {
         $row    = $stmtD->fetch();
         $numRI  = $row['numero_ri'] ?: $num->genererRI();
 
-        $this->db->prepare("UPDATE dossiers SET cabinet_id=:cab, numero_ri=:ri, statut='instruction', date_instruction_debut=CURDATE() WHERE id=:id")
+        $this->db->prepare("UPDATE dossiers SET cabinet_id=:cab, numero_ri=:ri, statut='en_instruction', date_instruction_debut=CURDATE() WHERE id=:id")
             ->execute(['cab'=>$cabinetId,'ri'=>$numRI,'id'=>(int)$id]);
 
         $this->db->prepare("INSERT INTO mouvements_dossier (dossier_id,user_id,type_mouvement,ancien_statut,nouveau_statut,description) VALUES (?,?,'affectation_instruction',?,?,'Affecté au cabinet d''instruction')")
-            ->execute([(int)$id, Auth::userId(), 'parquet', 'instruction']);
+            ->execute([(int)$id, Auth::userId(), 'parquet', 'en_instruction']);
 
         $this->flash('success', "Dossier envoyé en instruction — {$numRI}.");
         $this->redirect('/dossiers/show/' . $id);
