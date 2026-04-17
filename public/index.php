@@ -152,6 +152,7 @@ $router->get('/config/cabinets',                         'ConfigController@cabin
 $router->post('/config/cabinets/store',                  'ConfigController@cabinetStore');
 $router->post('/config/cabinets/update/{id}',            'ConfigController@cabinetUpdate');
 $router->post('/config/cabinets/delete/{id}',            'ConfigController@cabinetDelete');
+$router->get('/config/cabinets/dossiers/{id}',           'ConfigController@cabinetDossiers');
 
 $router->get('/config/primo-intervenants',               'ConfigController@primoIntervenants');
 $router->post('/config/primo-intervenants/store',        'ConfigController@primoIntervenantStore');
@@ -167,6 +168,7 @@ $router->get('/config/substituts',                       'ConfigController@subst
 $router->post('/config/substituts/store',                'ConfigController@substitutStore');
 $router->post('/config/substituts/update/{id}',          'ConfigController@substitutUpdate');
 $router->post('/config/substituts/delete/{id}',          'ConfigController@substitutDelete');
+$router->get('/config/substituts/dossiers/{id}',         'ConfigController@substitutDossiers');
 
 $router->get('/config/infractions',                      'ConfigController@infractions');
 $router->post('/config/infractions/store',               'ConfigController@infractionStore');
@@ -177,11 +179,28 @@ $router->get('/config/maisons-arret',                    'ConfigController@maiso
 $router->post('/config/maisons-arret/store',             'ConfigController@maisonArretStore');
 $router->post('/config/maisons-arret/update/{id}',       'ConfigController@maisonArretUpdate');
 $router->post('/config/maisons-arret/delete/{id}',       'ConfigController@maisonArretDelete');
+$router->get('/config/maisons-arret/stats/{id}',         'ConfigController@maisonArretStats');
 
-$router->get('/config/membres-audience',                'ConfigController@membresAudience');
+$router->get('/config/membres-audience',                 'ConfigController@membresAudience');
 $router->get('/config/salles-audience',                  'ConfigController@sallesAudience');
 $router->post('/config/salles-audience/store',           'ConfigController@salleAudienceStore');
 $router->post('/config/salles-audience/update/{id}',     'ConfigController@salleAudienceUpdate');
 $router->post('/config/salles-audience/delete/{id}',     'ConfigController@salleAudienceDelete');
+
+// Paramètres du tribunal
+$router->get('/config/parametres',                       'ParametresController@index');
+$router->post('/config/parametres/save',                 'ParametresController@save');
+
+// Gestion des droits utilisateurs
+$router->get('/admin/droits',                            'DroitsController@index');
+$router->get('/admin/droits/user/{id}',                  'DroitsController@editUser');
+$router->post('/admin/droits/save/{userId}',             'DroitsController@saveUser');
+
+// API cabinets & substituts charge
+$router->get('/api/cabinets/charge',                     'ConfigController@apiCabinetsCharge');
+$router->get('/api/substituts/charge',                   'ConfigController@apiSubstitutsCharge');
+
+// PV déclassement
+$router->post('/pv/declasser/{id}',                      'PVController@declasser');
 
 $router->dispatch();

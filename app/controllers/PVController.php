@@ -203,6 +203,36 @@ class PVController extends Controller {
         $this->redirect('/pv/show/' . $id);
     }
 
+    public function declasser(string $id): void {
+        Auth::requireLogin();
+        CSRF::check();
+        Auth::requireRole(['admin','procureur']);
+        $id = (int)$id;
+        $motif = $this->sanitize($_POST['motif_declassement'] ?? '');
+        if (!$motif) {
+            $this->flash('error', 'Veuillez indiquer le motif du déclassement.');
+            $this->redirect('/pv/show/' . $id);
+            return;
+        }
+        $pv = $this->db->prepare("SELECT statut FROM pv WHERE id=?")->execute([$id])
+            ? $this->db->prepare("SELECT statut FROM pv WHERE id=?") : null;
+        $stmtPV = $this->db->prepare("SELECT statut FROM pv WHERE id=?");
+        $stmtPV->execute([$id]);
+        $pv = $stmtPV->fetch();
+        if (!$pv || $pv['statut'] !== 'classe') {
+            $this->flash('error', 'Ce PV n\'est pas classé sans suite.');
+            $this->redirect('/pv/show/' . $id);
+            return;
+        }
+        $this->db->prepare(
+            "UPDATE pv SET statut='en_traitement', motif_classement=NULL,
+             motif_declassement=:m, date_declassement=CURDATE()
+             WHERE id=:id"
+        )->execute([':m' => $motif, ':id' => $id]);
+        $this->flash('success', 'PV déclassé et remis en traitement.');
+        $this->redirect('/pv/show/' . $id);
+    }
+
     public function transferer(string $id): void {
         Auth::requireLogin();
         CSRF::check();

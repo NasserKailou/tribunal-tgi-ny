@@ -108,6 +108,22 @@
             </div>
         </div>
 
+        <?php if ($pv['statut'] === 'classe' && Auth::hasRole(['admin','procureur'])): ?>
+        <div class="card border-0 shadow-sm mb-3 border-warning">
+            <div class="card-header bg-warning fw-semibold">
+                <i class="bi bi-arrow-counterclockwise me-2"></i>PV classé sans suite
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-2">
+                    <strong>Classé le :</strong> <?= $pv['date_classement'] ? date('d/m/Y', strtotime($pv['date_classement'])) : '—' ?>
+                </p>
+                <button class="btn btn-warning btn-sm w-100" data-bs-toggle="modal" data-bs-target="#modalDeclasser">
+                    <i class="bi bi-arrow-counterclockwise me-2"></i>Déclasser ce PV
+                </button>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- Actions -->
         <?php if (in_array($pv['statut'], ['recu','en_traitement'])): ?>
         <div class="card border-0 shadow-sm mb-3">
@@ -146,12 +162,16 @@
                 <?= CSRF::field() ?>
                 <div class="modal-body">
                     <label class="form-label">Substitut du procureur</label>
-                    <select name="substitut_id" class="form-select" required>
+                    <select name="substitut_id" class="form-select" required id="selectSubstitut">
                         <option value="">— Sélectionner —</option>
                         <?php foreach ($substituts as $s): ?>
                         <option value="<?= $s['id'] ?>"><?= htmlspecialchars($s['prenom'].' '.$s['nom']) ?></option>
                         <?php endforeach; ?>
                     </select>
+                    <div id="substitutChargeInfo" class="small text-muted mt-1"></div>
+                    <button type="button" class="btn btn-outline-success btn-sm mt-2" onclick="suggererSubstitut()">
+                        <i class="bi bi-magic me-1"></i>Suggérer le moins chargé
+                    </button>
                 </div>
                 <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button><button type="submit" class="btn btn-warning">Affecter</button></div>
             </form>
@@ -199,12 +219,16 @@
                     </div>
                     <div id="cabinetBlock" style="display:none" class="mb-3">
                         <label class="form-label">Cabinet d'instruction</label>
-                        <select name="cabinet_id" class="form-select">
+                        <select name="cabinet_id" class="form-select" id="selectCabinet">
                             <option value="">— Sélectionner —</option>
                             <?php foreach ($cabinets as $c): ?>
                             <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['numero'] . ' — ' . $c['libelle']) ?></option>
                             <?php endforeach; ?>
                         </select>
+                        <div id="cabinetChargeInfo" class="mt-1 small text-muted"></div>
+                        <button type="button" class="btn btn-outline-success btn-sm mt-1" onclick="suggererCabinet()">
+                            <i class="bi bi-magic me-1"></i>Suggérer le moins chargé
+                        </button>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Objet du dossier <span class="text-danger">*</span></label>
@@ -216,4 +240,76 @@
         </div>
     </div>
 </div>
-<script>function toggleCabinet(show){document.getElementById('cabinetBlock').style.display=show?'block':'none';}</script>
+<script>
+function toggleCabinet(show){document.getElementById('cabinetBlock').style.display=show?'block':'none';}
+function suggererCabinet(){
+    fetch('<?= BASE_URL ?>/api/cabinets/charge')
+    .then(r=>r.json())
+    .then(data=>{
+        if(data.success && data.data.length){
+            var best = data.data[0];
+            var sel  = document.getElementById('selectCabinet');
+            if(sel){
+                sel.value = best.id;
+                document.getElementById('cabinetChargeInfo').innerHTML =
+                    '<i class="bi bi-info-circle text-success me-1"></i>Suggéré : <strong>' +
+                    best.numero + ' — ' + best.libelle + '</strong> (' +
+                    best.nb_dossiers + ' dossier(s) actif(s))';
+            }
+        }
+    }).catch(()=>{});
+}
+function suggererSubstitut(){
+    fetch('<?= BASE_URL ?>/api/substituts/charge')
+    .then(r=>r.json())
+    .then(data=>{
+        if(data.success && data.data.length){
+            var best = data.data[0];
+            var sel  = document.getElementById('selectSubstitut');
+            if(sel){
+                sel.value = best.id;
+                document.getElementById('substitutChargeInfo').innerHTML =
+                    '<i class="bi bi-info-circle text-success me-1"></i>Suggéré : <strong>' +
+                    best.prenom + ' ' + best.nom + '</strong> (' +
+                    best.nb_pvs + ' PV(s) en cours)';
+            }
+        }
+    }).catch(()=>{});
+}
+</script>
+
+<!-- Modal Déclasser PV -->
+<div class="modal fade" id="modalDeclasser" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="bi bi-arrow-counterclockwise me-2"></i>Déclasser le PV</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="<?= BASE_URL ?>/pv/declasser/<?= $pv['id'] ?>">
+                <?= CSRF::field() ?>
+                <div class="modal-body">
+                    <div class="alert alert-info small">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Le PV sera remis au statut <strong>En traitement</strong> pour reprise du dossier.
+                    </div>
+                    <?php if ($pv['motif_classement']): ?>
+                    <div class="mb-3">
+                        <small class="text-muted">Motif du classement initial :</small>
+                        <p class="fst-italic small"><?= htmlspecialchars($pv['motif_classement']) ?></p>
+                    </div>
+                    <?php endif; ?>
+                    <label class="form-label fw-bold">Motif du déclassement <span class="text-danger">*</span></label>
+                    <textarea name="motif_declassement" class="form-control" rows="4" required
+                              placeholder="Exposez les raisons du déclassement (nouveaux éléments, erreur, …)"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Confirmer le déclassement
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

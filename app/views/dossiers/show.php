@@ -246,12 +246,16 @@
             <?=CSRF::field()?>
             <div class="modal-body">
                 <label class="form-label">Cabinet d'instruction <span class="text-danger">*</span></label>
-                <select name="cabinet_id" class="form-select" required>
+                <select name="cabinet_id" class="form-select" required id="selectCabinetInstr">
                     <option value="">— Sélectionner —</option>
                     <?php foreach($cabinets as $c): ?>
                     <option value="<?=$c['id']?>"><?=htmlspecialchars($c['numero'].' — '.$c['libelle'])?></option>
                     <?php endforeach; ?>
                 </select>
+                <div id="cabinetInstrInfo" class="small text-muted mt-1"></div>
+                <button type="button" class="btn btn-outline-success btn-sm mt-1" onclick="suggererCabinetInstr()">
+                    <i class="bi bi-magic me-1"></i>Suggérer le moins chargé
+                </button>
             </div>
             <div class="modal-footer"><button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Annuler</button><button class="btn btn-info text-dark" type="submit">Envoyer en instruction</button></div>
         </form>
@@ -756,6 +760,7 @@
         return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 })();
+</script>
 
 <!-- Modal Classer sans suite -->
 <div class="modal fade" id="modalClasser" tabindex="-1">
@@ -803,5 +808,23 @@
         </form>
     </div></div>
 </div>
-</script>
 
+<script>
+function suggererCabinetInstr(){
+    fetch('<?= BASE_URL ?>/api/cabinets/charge')
+    .then(r=>r.json())
+    .then(data=>{
+        if(data.success && data.data.length){
+            var best = data.data[0];
+            var sel  = document.getElementById('selectCabinetInstr');
+            if(sel){
+                sel.value = best.id;
+                document.getElementById('cabinetInstrInfo').innerHTML =
+                    '<i class="bi bi-info-circle text-success me-1"></i>Suggéré : <strong>' +
+                    best.numero + ' — ' + best.libelle + '</strong> (' +
+                    best.nb_dossiers + ' dossier(s) actif(s))';
+            }
+        }
+    }).catch(()=>{});
+}
+</script>
