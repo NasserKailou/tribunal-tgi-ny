@@ -193,6 +193,8 @@ CREATE TABLE IF NOT EXISTS pv (
     date_classement      DATE NULL,
     motif_declassement   TEXT NULL,
     date_declassement    DATE NULL,
+    substitut_id             INT NULL,
+    date_affectation_substitut DATE NULL,
     created_by           INT NULL,
     created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -200,7 +202,8 @@ CREATE TABLE IF NOT EXISTS pv (
     FOREIGN KEY (region_id)        REFERENCES regions(id)        ON DELETE SET NULL,
     FOREIGN KEY (departement_id)   REFERENCES departements(id)   ON DELETE SET NULL,
     FOREIGN KEY (commune_id)       REFERENCES communes(id)       ON DELETE SET NULL,
-    FOREIGN KEY (created_by)       REFERENCES users(id)          ON DELETE SET NULL
+    FOREIGN KEY (created_by)       REFERENCES users(id)          ON DELETE SET NULL,
+    FOREIGN KEY (substitut_id)     REFERENCES users(id)          ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS pv_primo_intervenants (
@@ -230,14 +233,15 @@ CREATE TABLE IF NOT EXISTS dossiers (
     type_affaire            ENUM('civile','penale','commerciale') NOT NULL DEFAULT 'penale',
     nature                  ENUM('correctionnel','instructionnel','civil','commercial','criminel') DEFAULT 'correctionnel',
     statut                  ENUM('nouveau','en_instruction','en_audience','juge','classe','appel','transfere') NOT NULL DEFAULT 'nouveau',
-    date_ouverture          DATE NOT NULL,
-    date_limite             DATE NULL,
+    date_enregistrement     DATE NOT NULL,
+    date_limite_traitement  DATE NULL,
     date_instruction_debut  DATE NULL,
     date_instruction_fin    DATE NULL,
     est_antiterroriste      TINYINT(1) DEFAULT 0,
     region_id               INT NULL,
     departement_id          INT NULL,
     commune_id              INT NULL,
+    juge_siege_id           INT NULL,
     created_by              INT NULL,
     created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -248,7 +252,8 @@ CREATE TABLE IF NOT EXISTS dossiers (
     FOREIGN KEY (region_id)      REFERENCES regions(id)               ON DELETE SET NULL,
     FOREIGN KEY (departement_id) REFERENCES departements(id)          ON DELETE SET NULL,
     FOREIGN KEY (commune_id)     REFERENCES communes(id)              ON DELETE SET NULL,
-    FOREIGN KEY (created_by)     REFERENCES users(id)                 ON DELETE SET NULL
+    FOREIGN KEY (created_by)     REFERENCES users(id)                 ON DELETE SET NULL,
+    FOREIGN KEY (juge_siege_id)  REFERENCES users(id)                 ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS parties (
@@ -270,14 +275,14 @@ CREATE TABLE IF NOT EXISTS parties (
 CREATE TABLE IF NOT EXISTS mouvements_dossier (
     id              INT AUTO_INCREMENT PRIMARY KEY,
     dossier_id      INT NOT NULL,
+    user_id         INT NULL,
     type_mouvement  VARCHAR(100) NOT NULL,
     description     TEXT,
-    statut_avant    VARCHAR(60),
-    statut_apres    VARCHAR(60),
-    effectue_par    INT NULL,
+    ancien_statut   VARCHAR(60),
+    nouveau_statut  VARCHAR(60),
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (dossier_id)   REFERENCES dossiers(id) ON DELETE CASCADE,
-    FOREIGN KEY (effectue_par) REFERENCES users(id)    ON DELETE SET NULL
+    FOREIGN KEY (dossier_id) REFERENCES dossiers(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS audiences (
@@ -287,10 +292,12 @@ CREATE TABLE IF NOT EXISTS audiences (
     numero_audience VARCHAR(60),
     date_audience   DATETIME NOT NULL,
     type_audience   ENUM('correctionnelle','criminelle','civile','commerciale','instruction','autre') DEFAULT 'correctionnelle',
-    statut          ENUM('planifiee','en_cours','terminee','reportee','annulee') DEFAULT 'planifiee',
+    statut          ENUM('planifiee','en_cours','terminee','reportee','annulee','tenue','renvoyee') DEFAULT 'planifiee',
     president_id    INT NULL,
     greffier_id     INT NULL,
-    observations    TEXT,
+    notes           TEXT NULL,
+    motif_renvoi    TEXT NULL,
+    date_renvoi     DATE NULL,
     created_by      INT NULL,
     created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -317,31 +324,40 @@ CREATE TABLE IF NOT EXISTS membres_audience (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS jugements (
-    id               INT AUTO_INCREMENT PRIMARY KEY,
-    dossier_id       INT NOT NULL,
-    audience_id      INT NULL,
-    numero_jugement  VARCHAR(80) UNIQUE NOT NULL,
-    date_jugement    DATE NOT NULL,
-    type_jugement    ENUM('correctionnel','criminel','civil','commercial','avant_dire_droit','autre') NOT NULL DEFAULT 'correctionnel',
-    nature_jugement  ENUM('condamnation','relaxe','acquittement','non_lieu','renvoi','autre') NOT NULL DEFAULT 'condamnation',
-    dispositif       TEXT NOT NULL,
-    peine_principale VARCHAR(255) NULL,
-    amende           DECIMAL(15,2) NULL,
+    id                INT AUTO_INCREMENT PRIMARY KEY,
+    dossier_id        INT NOT NULL,
+    audience_id       INT NULL,
+    numero_jugement   VARCHAR(80) UNIQUE NOT NULL,
+    date_jugement     DATE NOT NULL,
+    type_jugement     ENUM('correctionnel','criminel','civil','commercial','avant_dire_droit','autre') NOT NULL DEFAULT 'correctionnel',
+    nature_jugement   ENUM('condamnation','relaxe','acquittement','non_lieu','renvoi','autre') NOT NULL DEFAULT 'condamnation',
+    dispositif        TEXT NOT NULL,
+    peine_principale  VARCHAR(255) NULL,
+    duree_peine_mois  INT NULL,
+    montant_amende    DECIMAL(15,2) NULL,
     dommages_interets DECIMAL(15,2) NULL,
-    delai_appel_expire DATE NULL,
-    est_appele       TINYINT(1) DEFAULT 0,
-    date_appel       DATE NULL,
-    observations     TEXT,
-    redige_par       INT NULL,
-    created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    sursis            TINYINT(1) DEFAULT 0,
+    duree_sursis_mois INT NULL,
+    appel_possible    TINYINT(1) DEFAULT 0,
+    appel_interjecte  TINYINT(1) DEFAULT 0,
+    date_limite_appel DATE NULL,
+    date_appel        DATE NULL,
+    notes             TEXT NULL,
+    greffier_id       INT NULL,
+    redige_par        INT NULL,
+    created_by        INT NULL,
+    created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (dossier_id)  REFERENCES dossiers(id)  ON DELETE CASCADE,
     FOREIGN KEY (audience_id) REFERENCES audiences(id) ON DELETE SET NULL,
-    FOREIGN KEY (redige_par)  REFERENCES users(id)     ON DELETE SET NULL
+    FOREIGN KEY (greffier_id) REFERENCES users(id)     ON DELETE SET NULL,
+    FOREIGN KEY (redige_par)  REFERENCES users(id)     ON DELETE SET NULL,
+    FOREIGN KEY (created_by)  REFERENCES users(id)     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS detenus (
     id                 INT AUTO_INCREMENT PRIMARY KEY,
+    numero_ecrou       VARCHAR(50) UNIQUE NULL,
     nom                VARCHAR(100) NOT NULL,
     prenom             VARCHAR(100) NOT NULL,
     surnom_alias       VARCHAR(100) NULL,
@@ -380,11 +396,11 @@ CREATE TABLE IF NOT EXISTS documents (
     pv_id          INT NULL,
     audience_id    INT NULL,
     jugement_id    INT NULL,
-    nom_fichier    VARCHAR(300) NOT NULL,
+    nom_original   VARCHAR(300) NOT NULL,
     nom_stockage   VARCHAR(300) NOT NULL,
     chemin_fichier VARCHAR(500) NULL,
     type_document  ENUM('pv','acte_saisine','piece_jointe','jugement','ordonnance','pv_audience','autre') NOT NULL DEFAULT 'piece_jointe',
-    type_mime      VARCHAR(100) NULL,
+    mime_type      VARCHAR(100) NULL,
     taille_octets  INT NULL,
     description    TEXT NULL,
     uploaded_by    INT NULL,
@@ -437,12 +453,14 @@ CREATE TABLE IF NOT EXISTS alertes (
     niveau      ENUM('info','warning','danger') DEFAULT 'info',
     dossier_id  INT NULL,
     pv_id       INT NULL,
-    lu          TINYINT(1) DEFAULT 0,
+    est_lue     TINYINT(1) DEFAULT 0,
+    destinataire_id INT NULL,
     user_id     INT NULL,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (dossier_id) REFERENCES dossiers(id) ON DELETE CASCADE,
     FOREIGN KEY (pv_id)      REFERENCES pv(id)       ON DELETE CASCADE,
-    FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE SET NULL
+    FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE SET NULL,
+    FOREIGN KEY (destinataire_id) REFERENCES users(id)  ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
@@ -527,7 +545,7 @@ CREATE INDEX IF NOT EXISTS idx_mandats_dossier     ON mandats(dossier_id);
 CREATE INDEX IF NOT EXISTS idx_mandats_statut      ON mandats(statut);
 CREATE INDEX IF NOT EXISTS idx_documents_dossier   ON documents(dossier_id);
 CREATE INDEX IF NOT EXISTS idx_alertes_user        ON alertes(user_id);
-CREATE INDEX IF NOT EXISTS idx_alertes_lu          ON alertes(lu);
+CREATE INDEX IF NOT EXISTS idx_alertes_est_lue     ON alertes(est_lue);
 
 -- ============================================================
 -- 8. DONNÉES INITIALES — SEED DATA
