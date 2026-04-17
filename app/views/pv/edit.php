@@ -27,6 +27,17 @@
                 </select>
             </div>
             <div class="col-md-6">
+                <label class="form-label">Type d'infraction</label>
+                <select name="infraction_id" class="form-select">
+                    <option value="">— Sélectionner (optionnel) —</option>
+                    <?php foreach($infractions as $inf): ?>
+                    <option value="<?=$inf['id']?>" <?=(($pv['infraction_id']??'')==$inf['id'])?'selected':''?>>
+                        <?=htmlspecialchars($inf['libelle'])?> (<?=ucfirst($inf['categorie'])?>)
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="col-md-6">
                 <label class="form-label">Date du PV</label>
                 <input type="date" name="date_pv" class="form-control" value="<?=htmlspecialchars($pv['date_pv'])?>">
             </div>

@@ -5,9 +5,9 @@ $typeLabels   = ['arret'=>['danger','Mandat d\'arrêt'],'depot'=>['dark','Mandat
 $statutLabels = ['emis'=>['primary','Émis'],'signifie'=>['info','Signifié'],'execute'=>['success','Exécuté'],'annule'=>['danger','Annulé'],'expire'=>['secondary','Expiré']];
 [$tc,$tl] = $typeLabels[$mandat['type_mandat']] ?? ['secondary',$mandat['type_mandat']];
 [$sc,$sl] = $statutLabels[$mandat['statut']]    ?? ['secondary',$mandat['statut']];
-if($mandat['detenu_label'])      $cible = $mandat['detenu_label'].' (Détenu — '.$mandat['numero_ecrou'].')';
-elseif($mandat['partie_label'])  $cible = $mandat['partie_label'].' (Partie — '.$mandat['type_partie'].')';
-elseif($mandat['nouveau_nom'])   $cible = ($mandat['nouveau_prenom'].' '.$mandat['nouveau_nom']);
+if(!empty($mandat['detenu_label']))      $cible = $mandat['detenu_label'].' (Détenu — '.($mandat['numero_ecrou']??'').')';
+elseif(!empty($mandat['partie_label']))  $cible = $mandat['partie_label'].' (Partie — '.($mandat['type_partie']??'').')';
+elseif(!empty($mandat['nouveau_nom']))   $cible = (($mandat['nouveau_prenom']??'').' '.$mandat['nouveau_nom']);
 else                              $cible = 'Non précisé';
 $today = date('Y-m-d');
 $expired = $mandat['date_expiration'] && $mandat['date_expiration'] < $today;
@@ -25,12 +25,12 @@ $expired = $mandat['date_expiration'] && $mandat['date_expiration'] < $today;
     </a>
 </div>
 
-<?php if($flash['success']??''): ?>
-<div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-2"></i><?= htmlspecialchars($flash['success']) ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-<?php endif; ?>
-<?php if($flash['error']??''): ?>
-<div class="alert alert-danger alert-dismissible fade show"><i class="bi bi-x-circle me-2"></i><?= htmlspecialchars($flash['error']) ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-<?php endif; ?>
+<?php if (!empty($flash['success'])): foreach ((array)$flash['success'] as $msg): ?>
+<div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle-fill me-2"></i><?= htmlspecialchars($msg) ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+<?php endforeach; endif; ?>
+<?php if (!empty($flash['error'])): foreach ((array)$flash['error'] as $msg): ?>
+<div class="alert alert-danger alert-dismissible fade show"><i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars($msg) ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+<?php endforeach; endif; ?>
 
 <div class="row g-4">
     <div class="col-lg-8">

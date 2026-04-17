@@ -7,7 +7,7 @@
             <div class="d-flex gap-2 mt-1">
                 <?php if($dossier['numero_rp']): ?><span class="badge bg-warning text-dark">RP: <?=htmlspecialchars($dossier['numero_rp'])?></span><?php endif; ?>
                 <?php if($dossier['numero_ri']): ?><span class="badge bg-info text-dark">RI: <?=htmlspecialchars($dossier['numero_ri'])?></span><?php endif; ?>
-                <?php $sm=['enregistre'=>['secondary','Enregistré'],'parquet'=>['warning','Parquet'],'instruction'=>['info','Instruction'],'en_audience'=>['primary','Audience'],'juge'=>['success','Jugé'],'classe'=>['dark','Classé'],'appel'=>['danger','Appel']];[$sc,$sl]=$sm[$dossier['statut']]??['secondary',$dossier['statut']]; ?>
+                <?php $sm=['enregistre'=>['secondary','Enregistré'],'parquet'=>['warning','Parquet'],'instruction'=>['info','Instruction'],'en_instruction'=>['info','En instruction'],'en_audience'=>['primary','Audience'],'juge'=>['success','Jugé'],'classe'=>['dark','Classé'],'appel'=>['danger','Appel']];[$sc,$sl]=$sm[$dossier['statut']]??['secondary',$dossier['statut']]; ?>
                 <span class="badge bg-<?=$sc?> fs-6"><?=$sl?></span>
             </div>
         </div>
@@ -41,6 +41,13 @@
                             <div class="col-md-6"><small class="text-muted">Type</small><br><span class="badge <?=$dossier['type_affaire']==='penale'?'bg-danger':($dossier['type_affaire']==='civile'?'bg-primary':'bg-success')?> fs-6"><?=ucfirst($dossier['type_affaire'])?></span></div>
                             <div class="col-md-6"><small class="text-muted">Substitut</small><br><strong><?=htmlspecialchars(($dossier['substitut_prenom']??'').($dossier['substitut_nom']?' '.$dossier['substitut_nom']:'—'))?></strong></div>
                             <div class="col-md-6"><small class="text-muted">Cabinet d'instruction</small><br><strong><?=htmlspecialchars($dossier['cabinet_num']?($dossier['cabinet_num'].' — '.$dossier['cabinet_lib']):'—')?></strong></div>
+                            <?php if(!empty($dossier['mode_poursuite']) && $dossier['mode_poursuite'] !== 'aucun'): ?>
+                            <?php $mpLabels=['CD'=>'Citation Directe','FD'=>'Flagrant Délit','CRCP'=>'CRCP','RI'=>'Réquisitoire Introductif']; ?>
+                            <div class="col-md-6"><small class="text-muted">Mode de poursuite</small><br>
+                                <span class="badge bg-info text-dark fs-6"><?=htmlspecialchars($dossier['mode_poursuite'])?></span>
+                                <small class="text-muted ms-1"><?=htmlspecialchars($mpLabels[$dossier['mode_poursuite']]??'')?></small>
+                            </div>
+                            <?php endif; ?>
                             <?php if($dossier['date_instruction_debut']): ?>
                             <div class="col-md-6"><small class="text-muted">Début instruction</small><br><strong><?=date('d/m/Y',strtotime($dossier['date_instruction_debut']))?></strong></div>
                             <div class="col-md-6"><small class="text-muted">Juge d'instruction</small><br><strong><?=htmlspecialchars($dossier['juge_instr_prenom']?$dossier['juge_instr_prenom'].' '.$dossier['juge_instr_nom']:'—')?></strong></div>
@@ -59,14 +66,14 @@
             </div>
             <div class="col-lg-4">
                 <!-- Actions workflow -->
-                <?php if(in_array($dossier['statut'],['parquet','instruction'])): ?>
+                <?php if(in_array($dossier['statut'],['parquet','instruction','en_instruction'])): ?>
                 <div class="card border-0 shadow-sm mb-3">
                     <div class="card-header bg-white fw-semibold"><i class="bi bi-play-circle me-2 text-primary"></i>Actions</div>
                     <div class="card-body d-grid gap-2">
                         <?php if($dossier['statut']==='parquet' && Auth::hasRole(['admin','procureur','substitut_procureur','president'])): ?>
                         <button class="btn btn-info text-dark" data-bs-toggle="modal" data-bs-target="#modalInstruction"><i class="bi bi-send me-2"></i>Envoyer en instruction</button>
                         <?php endif; ?>
-                        <?php if(in_array($dossier['statut'],['parquet','instruction']) && Auth::hasRole(['admin','procureur','juge_instruction','president'])): ?>
+                        <?php if(in_array($dossier['statut'],['parquet','instruction','en_instruction']) && Auth::hasRole(['admin','procureur','juge_instruction','president'])): ?>
                         <form method="POST" action="<?=BASE_URL?>/dossiers/envoyer-audience/<?=$dossier['id']?>" onsubmit="return confirm('Envoyer en audience ?')">
                             <?=CSRF::field()?>
                             <button type="submit" class="btn btn-primary w-100"><i class="bi bi-calendar-plus me-2"></i>Envoyer en audience</button>
@@ -78,7 +85,7 @@
                     </div>
                 </div>
                 <?php endif; ?>
-                <?php if(in_array($dossier['statut'],['parquet','instruction','en_audience']) && Auth::hasRole(['admin','procureur','substitut_procureur'])): ?>
+                <?php if(in_array($dossier['statut'],['parquet','instruction','en_instruction','en_audience']) && Auth::hasRole(['admin','procureur','substitut_procureur'])): ?>
                 <div class="card border-0 shadow-sm mb-3">
                     <div class="card-header bg-white fw-semibold"><i class="bi bi-archive text-secondary me-2"></i>Classement</div>
                     <div class="card-body d-grid gap-2">
@@ -246,12 +253,16 @@
             <?=CSRF::field()?>
             <div class="modal-body">
                 <label class="form-label">Cabinet d'instruction <span class="text-danger">*</span></label>
-                <select name="cabinet_id" class="form-select" required>
+                <select name="cabinet_id" class="form-select" required id="selectCabinetInstr">
                     <option value="">— Sélectionner —</option>
                     <?php foreach($cabinets as $c): ?>
                     <option value="<?=$c['id']?>"><?=htmlspecialchars($c['numero'].' — '.$c['libelle'])?></option>
                     <?php endforeach; ?>
                 </select>
+                <div id="cabinetInstrInfo" class="small text-muted mt-1"></div>
+                <button type="button" class="btn btn-outline-success btn-sm mt-1" onclick="suggererCabinetInstr()">
+                    <i class="bi bi-magic me-1"></i>Suggérer le moins chargé
+                </button>
             </div>
             <div class="modal-footer"><button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Annuler</button><button class="btn btn-info text-dark" type="submit">Envoyer en instruction</button></div>
         </form>
@@ -391,14 +402,24 @@
 ================================================================ -->
 <div class="modal fade" id="modalView" tabindex="-1" aria-labelledby="modalViewLabel">
     <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content" style="height:90vh">
+        <div class="modal-content" style="height:90vh;display:flex;flex-direction:column">
             <div class="modal-header py-2">
                 <h6 class="modal-title mb-0" id="modalViewLabel">
-                    <i class="bi bi-eye me-2"></i><span id="modalViewTitle">Document</span>
+                    <i class="bi bi-eye me-2 text-primary"></i><span id="modalViewTitle">Document</span>
                 </h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="d-flex gap-2 align-items-center">
+                    <a id="modalViewDownload" href="#" download
+                       class="btn btn-sm btn-outline-secondary" title="Télécharger">
+                        <i class="bi bi-download"></i>
+                    </a>
+                    <a id="modalViewOpen" href="#" target="_blank"
+                       class="btn btn-sm btn-outline-primary" title="Ouvrir dans un nouvel onglet">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
             </div>
-            <div class="modal-body p-0" style="overflow:hidden;flex:1">
+            <div class="modal-body p-0 flex-fill" style="overflow:hidden">
                 <iframe id="viewerFrame"
                         src="about:blank"
                         style="width:100%;height:100%;border:none;display:block"
@@ -508,21 +529,32 @@
         if (inline) {
             // Ouvre le modal avec iframe
             document.getElementById('modalViewTitle').textContent = nom;
-            document.getElementById('viewerFrame').src = url;
+            // Reset d'abord pour forcer le rechargement
+            document.getElementById('viewerFrame').src = 'about:blank';
+            // Petit délai pour s'assurer que l'iframe est bien réinitialisée
+            setTimeout(function () {
+                document.getElementById('viewerFrame').src = url;
+            }, 50);
+            // Liens téléchargement / onglet
+            var dlLink   = document.getElementById('modalViewDownload');
+            var openLink = document.getElementById('modalViewOpen');
+            if (dlLink)   { dlLink.href = url;   dlLink.download = nom; }
+            if (openLink) { openLink.href = url; }
             var modal = new bootstrap.Modal(document.getElementById('modalView'));
             modal.show();
         } else {
-            // Téléchargement direct
-            var a = document.createElement('a');
-            a.href = url;
-            a.download = nom;
-            a.click();
+            // Ouvrir dans un nouvel onglet pour les autres formats
+            window.open(url, '_blank');
         }
     };
 
     // Vider l'iframe quand on ferme le modal (évite de garder le PDF en mémoire)
     document.getElementById('modalView').addEventListener('hide.bs.modal', function () {
         document.getElementById('viewerFrame').src = 'about:blank';
+        var dlLink   = document.getElementById('modalViewDownload');
+        var openLink = document.getElementById('modalViewOpen');
+        if (dlLink)   dlLink.href = '#';
+        if (openLink) openLink.href = '#';
     });
 
     /* ----------------------------------------------------------
@@ -533,7 +565,10 @@
         fetch(BASE_URL + '/documents/delete/' + id, {
             method: 'POST',
             credentials: 'same-origin',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             body: '_csrf=' + encodeURIComponent(CSRF_TOKEN)
         })
         .then(function (r) { return r.json(); })
@@ -581,6 +616,7 @@
         var xhr = new XMLHttpRequest();
         xhr.open('POST', BASE_URL + '/documents/upload/' + DOSSIER_ID);
         xhr.withCredentials = true;
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
 
         xhr.upload.addEventListener('progress', function (e) {
             if (e.lengthComputable) {
@@ -594,8 +630,13 @@
         xhr.addEventListener('load', function () {
             btn.disabled = false;
             progressWrap.classList.add('d-none');
+            var rawText = xhr.responseText;
+            // Tentative de parsing JSON — récupère aussi les erreurs serveur JSON
             try {
-                var data = JSON.parse(xhr.responseText);
+                // Chercher le JSON même s'il y a des notices PHP avant
+                var jsonStart = rawText.indexOf('{');
+                var jsonText  = jsonStart >= 0 ? rawText.substring(jsonStart) : rawText;
+                var data = JSON.parse(jsonText);
                 if (data.success) {
                     resultEl.className = 'alert alert-success mt-2';
                     resultEl.textContent = data.message;
@@ -616,8 +657,13 @@
                     resultEl.classList.remove('d-none');
                 }
             } catch (e) {
+                // Réponse non-JSON : afficher le statut HTTP et le début de la réponse
+                var status = xhr.status;
+                var hint   = rawText.length > 0
+                    ? ' (Réponse serveur: ' + rawText.substring(0, 120).replace(/<[^>]+>/g, '') + ')'
+                    : '';
                 resultEl.className = 'alert alert-danger mt-2';
-                resultEl.textContent = 'Réponse serveur invalide.';
+                resultEl.textContent = 'Erreur serveur (HTTP ' + status + ').' + hint;
                 resultEl.classList.remove('d-none');
             }
         });
@@ -756,6 +802,7 @@
         return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 })();
+</script>
 
 <!-- Modal Classer sans suite -->
 <div class="modal fade" id="modalClasser" tabindex="-1">
@@ -803,5 +850,23 @@
         </form>
     </div></div>
 </div>
-</script>
 
+<script>
+function suggererCabinetInstr(){
+    fetch('<?= BASE_URL ?>/api/cabinets/charge')
+    .then(r=>r.json())
+    .then(data=>{
+        if(data.success && data.data.length){
+            var best = data.data[0];
+            var sel  = document.getElementById('selectCabinetInstr');
+            if(sel){
+                sel.value = best.id;
+                document.getElementById('cabinetInstrInfo').innerHTML =
+                    '<i class="bi bi-info-circle text-success me-1"></i>Suggéré : <strong>' +
+                    best.numero + ' — ' + best.libelle + '</strong> (' +
+                    best.nb_dossiers + ' dossier(s) actif(s))';
+            }
+        }
+    }).catch(()=>{});
+}
+</script>

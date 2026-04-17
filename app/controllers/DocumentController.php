@@ -5,7 +5,7 @@
  * Routes :
  *   POST /documents/upload/{dossierId}  → upload()
  *   POST /documents/delete/{id}         → delete()
- *   GET  /documents/view/{id}           → view()
+ *   GET  /documents/view/{id}           → serve()
  *   GET  /documents/list/{dossierId}    → list()
  *
  * Contraintes :
@@ -194,7 +194,7 @@ class DocumentController extends Controller
     // ----------------------------------------------------------------
     // GET /documents/view/{id}
     // ----------------------------------------------------------------
-    public function view(string $id): void
+    public function serve(string $id): void
     {
         Auth::requireLogin();
 
@@ -213,34 +213,34 @@ class DocumentController extends Controller
             exit('Document introuvable.');
         }
 
-        $cheminAbs = ROOT_PATH . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR
-            . str_replace('/', DIRECTORY_SEPARATOR, $doc['chemin_fichier']);
+        // Construire le chemin absolu — chemin_fichier stocké en relatif (ex: uploads/documents/dossier_1/xxx.pdf)
+        $cheminRelatif = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $doc['chemin_fichier']);
+        $cheminAbs     = ROOT_PATH . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . $cheminRelatif;
 
         if (!file_exists($cheminAbs)) {
             http_response_code(404);
-            exit('Fichier introuvable sur le serveur.');
+            exit('Fichier introuvable sur le serveur. Chemin: ' . htmlspecialchars($cheminAbs));
         }
 
         $mime = $doc['mime_type'] ?: 'application/octet-stream';
 
         // Inline pour PDF et images, attachment pour le reste
-        if (in_array($mime, self::TYPES_INLINE, true)) {
-            $disposition = 'inline';
-        } else {
-            $disposition = 'attachment';
+        $disposition = in_array($mime, self::TYPES_INLINE, true) ? 'inline' : 'attachment';
+
+        // IMPORTANT : vider tous les buffers de sortie avant l'envoi binaire
+        // (ob_start() est actif dans public/index.php)
+        while (ob_get_level() > 0) {
+            ob_end_clean();
         }
 
-        // Envoi du fichier
+        // Envoyer le fichier
         header('Content-Type: ' . $mime);
         header('Content-Disposition: ' . $disposition . '; filename="' . addslashes($doc['nom_original']) . '"');
         header('Content-Length: ' . filesize($cheminAbs));
         header('Cache-Control: private, max-age=3600');
         header('X-Content-Type-Options: nosniff');
-
-        // Nettoyage des buffers de sortie avant l'envoi binaire
-        while (ob_get_level()) {
-            ob_end_clean();
-        }
+        // Autoriser l'affichage dans une iframe (même origine)
+        header('X-Frame-Options: SAMEORIGIN');
 
         readfile($cheminAbs);
         exit;

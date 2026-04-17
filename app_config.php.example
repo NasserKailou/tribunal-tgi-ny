@@ -1,0 +1,23 @@
+<?php
+/**
+ * ─────────────────────────────────────────────────────────────
+ * app_config.php — Configuration locale TGI-NY
+ * ─────────────────────────────────────────────────────────────
+ * Ce fichier est exclu du contrôle de version (.gitignore).
+ * Copiez ce fichier sur votre serveur et ajustez les valeurs.
+ *
+ * UTILISATION :
+ *   1. Copier ce fichier dans la racine du projet
+ *   2. Décommenter et ajuster les lignes selon votre environnement
+ *   3. Le fichier est chargé automatiquement par config.php
+ * ─────────────────────────────────────────────────────────────
+ */
+
+// ── URL de base de l'application ──────────────────────────────
+// Décommentez et ajustez si l'auto-détection ne fonctionne pas
+// Exemples :
+//   XAMPP sous-dossier : 'http://localhost/tribunal-tgi-ny/public'
+//   vhost racine       : 'http://tribunal.mondomaine.ne'
+//   production HTTPS   : 'https://sgj.tribunal-niamey.ne'
+//
+// define('APP_BASE_URL', 'http://localhost/tribunal-tgi-ny/public');

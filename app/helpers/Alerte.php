@@ -37,7 +37,7 @@ class AlerteHelper {
         $sql = "SELECT d.id, d.numero_rg, d.cabinet_id, ci.juge_id, d.date_instruction_debut
                 FROM dossiers d
                 LEFT JOIN cabinets_instruction ci ON d.cabinet_id = ci.id
-                WHERE d.statut = 'instruction'
+                WHERE d.statut IN ('instruction','en_instruction')
                   AND d.date_instruction_debut IS NOT NULL
                   AND TIMESTAMPDIFF(MONTH, d.date_instruction_debut, NOW()) > :delai";
         $stmt = $this->db->prepare($sql);
@@ -126,15 +126,29 @@ class AlerteHelper {
         ]);
         if ($stmt->fetch()) return; // déjà créée
 
+        $titres = [
+            'retard_pv'          => 'PV en retard de traitement',
+            'retard_instruction' => 'Instruction en retard',
+            'appel_expire'       => 'Délai d\'appel expirant',
+            'delai_detention'    => 'Détention provisoire prolongée',
+            'delai_pv'           => 'Délai PV dépassé',
+            'delai_instruction'  => 'Délai instruction dépassé',
+            'audience_proche'    => 'Audience imminente',
+            'mandat_expire'      => 'Mandat arrivant à expiration',
+            'autre'              => 'Alerte système',
+        ];
+        $titre = $titres[$type] ?? 'Alerte';
+
         $ins = $this->db->prepare(
-            "INSERT INTO alertes (dossier_id, pv_id, type_alerte, niveau, message, destinataire_id) 
-             VALUES (:did, :pid, :type, :niveau, :msg, :dest)"
+            "INSERT INTO alertes (dossier_id, pv_id, type_alerte, niveau, titre, message, destinataire_id) 
+             VALUES (:did, :pid, :type, :niveau, :titre, :msg, :dest)"
         );
         $ins->execute([
             'did'    => $dossierId,
             'pid'    => $pvId,
             'type'   => $type,
             'niveau' => $niveau,
+            'titre'  => $titre,
             'msg'    => $message,
             'dest'   => $destinataireId,
         ]);
