@@ -45,6 +45,52 @@
 </div>
 <?php endif; ?>
 
+<!-- Nouveaux modules — stats complémentaires -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-2">
+        <a href="<?=BASE_URL?>/avocats" class="text-decoration-none">
+        <div class="card border-0 shadow-sm text-center py-3 h-100">
+            <div class="fw-bold fs-4 text-primary"><?= $stats['nbAvocats'] ?? 0 ?></div>
+            <small class="text-muted">Avocats actifs</small>
+        </div></a>
+    </div>
+    <div class="col-6 col-md-2">
+        <a href="<?=BASE_URL?>/controles-judiciaires" class="text-decoration-none">
+        <div class="card border-0 shadow-sm text-center py-3 h-100">
+            <div class="fw-bold fs-4 text-success"><?= $stats['nbControlesActifs'] ?? 0 ?></div>
+            <small class="text-muted">Contrôles judiciaires</small>
+        </div></a>
+    </div>
+    <div class="col-6 col-md-2">
+        <a href="<?=BASE_URL?>/expertises" class="text-decoration-none">
+        <div class="card border-0 shadow-sm text-center py-3 h-100">
+            <div class="fw-bold fs-4 text-info"><?= $stats['nbExpertisesEnCours'] ?? 0 ?></div>
+            <small class="text-muted">Expertises en cours</small>
+        </div></a>
+    </div>
+    <div class="col-6 col-md-2">
+        <a href="<?=BASE_URL?>/scelles" class="text-decoration-none">
+        <div class="card border-0 shadow-sm text-center py-3 h-100">
+            <div class="fw-bold fs-4 text-warning"><?= $stats['nbScelles'] ?? 0 ?></div>
+            <small class="text-muted">Scellés conservés</small>
+        </div></a>
+    </div>
+    <div class="col-6 col-md-2">
+        <a href="<?=BASE_URL?>/voies-recours" class="text-decoration-none">
+        <div class="card border-0 shadow-sm text-center py-3 h-100">
+            <div class="fw-bold fs-4 text-danger"><?= $stats['nbVoiesRecours'] ?? 0 ?></div>
+            <small class="text-muted">Recours en cours</small>
+        </div></a>
+    </div>
+    <div class="col-6 col-md-2">
+        <a href="<?=BASE_URL?>/ordonnances" class="text-decoration-none">
+        <div class="card border-0 shadow-sm text-center py-3 h-100">
+            <div class="fw-bold fs-4 text-secondary"><?= $stats['nbOrdonnances'] ?? 0 ?></div>
+            <small class="text-muted">Ordonnances <?=date('Y')?></small>
+        </div></a>
+    </div>
+</div>
+
 <!-- Graphiques -->
 <div class="row g-3 mb-4">
     <div class="col-lg-8">

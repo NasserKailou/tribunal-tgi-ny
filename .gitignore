@@ -1,5 +1,8 @@
 /public/uploads/*
 !/public/uploads/.gitkeep
+!/public/uploads/.htaccess
+!/public/uploads/documents/
+!/public/uploads/documents/.gitkeep
 *.log
 .env
 *.env.local
@@ -7,3 +10,4 @@ node_modules/
 vendor/
 .DS_Store
 Thumbs.db
+app_config.php

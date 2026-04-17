@@ -43,6 +43,17 @@
                             </select>
                         </div>
                         <div class="col-md-6">
+                            <label class="form-label">Type d'infraction</label>
+                            <select name="infraction_id" class="form-select">
+                                <option value="">— Sélectionner (optionnel) —</option>
+                                <?php foreach ($infractions as $inf): ?>
+                                <option value="<?= $inf['id'] ?>" <?= ($_POST['infraction_id']??'')==$inf['id']?'selected':'' ?>>
+                                    <?= htmlspecialchars($inf['libelle']) ?> (<?= ucfirst($inf['categorie']) ?>)
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
                             <label class="form-label">Unité d'enquête</label>
                             <select name="unite_enquete_id" class="form-select">
                                 <option value="">— Sélectionner —</option>

@@ -35,9 +35,28 @@ class AuthController extends Controller {
 
         Auth::login($user);
 
-        $intended = $_SESSION['intended_url'] ?? '/dashboard';
+        // Récupérer l'URL d'intention et la nettoyer
+        $intended = $_SESSION['intended_url'] ?? '';
         unset($_SESSION['intended_url']);
-        $this->redirect($intended);
+
+        // Si l'URL intended est vide ou pointe vers /login, rediriger vers /dashboard
+        if (empty($intended) || strpos($intended, '/login') !== false) {
+            $this->redirect('/dashboard');
+            return;
+        }
+
+        // Extraire le chemin relatif depuis BASE_URL
+        // Si intended contient déjà le préfixe du sous-dossier (REQUEST_URI brut),
+        // on construit la redirection vers BASE_URL + chemin relatif propre
+        $basePath = parse_url(BASE_URL, PHP_URL_PATH) ?? '';
+        if ($basePath && strpos($intended, $basePath) === 0) {
+            // intended = /tribunal-tgi-ny/public/dashboard -> chemin = /dashboard
+            $chemin = substr($intended, strlen($basePath)) ?: '/dashboard';
+            $this->redirect($chemin);
+        } else {
+            // L'URL intended est déjà relative, on la redirige directement
+            $this->redirect($intended ?: '/dashboard');
+        }
     }
 
     public function logout(): void {

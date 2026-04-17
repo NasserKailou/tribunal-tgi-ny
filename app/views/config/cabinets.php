@@ -45,13 +45,17 @@
                             <?php endif; ?>
                         </td>
                         <td class="text-end">
+                            <a href="<?= BASE_URL ?>/config/cabinets/dossiers/<?= $c['id'] ?>"
+                               class="btn btn-sm btn-outline-info me-1" title="Voir les dossiers assignés">
+                                <i class="bi bi-folder2-open"></i>
+                            </a>
                             <button class="btn btn-sm btn-outline-warning me-1"
                                 data-bs-toggle="modal" data-bs-target="#modalEdit<?= $c['id'] ?>">
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <form method="POST" action="<?= BASE_URL ?>/config/cabinets/delete/<?= $c['id'] ?>" class="d-inline"
                                 onsubmit="return confirm('Supprimer ce cabinet ?')">
-                                <input type="hidden" name="csrf_token" value="<?= CSRF::generate() ?>">
+                                <?= CSRF::field() ?>
                                 <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                             </form>
                         </td>
@@ -62,7 +66,7 @@
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <form method="POST" action="<?= BASE_URL ?>/config/cabinets/update/<?= $c['id'] ?>">
-                                    <input type="hidden" name="csrf_token" value="<?= CSRF::generate() ?>">
+                                    <?= CSRF::field() ?>
                                     <div class="modal-header bg-dark text-white">
                                         <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Modifier le cabinet</h5>
                                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -120,7 +124,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" action="<?= BASE_URL ?>/config/cabinets/store">
-                <input type="hidden" name="csrf_token" value="<?= CSRF::generate() ?>">
+                <?= CSRF::field() ?>
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Nouveau cabinet</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>

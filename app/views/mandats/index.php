@@ -12,9 +12,9 @@
     <?php endif; ?>
 </div>
 
-<?php if($flash['success']??''): ?>
-<div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle me-2"></i><?= htmlspecialchars($flash['success']) ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-<?php endif; ?>
+<?php if (!empty($flash['success'])): foreach ((array)$flash['success'] as $msg): ?>
+<div class="alert alert-success alert-dismissible fade show"><i class="bi bi-check-circle-fill me-2"></i><?= htmlspecialchars($msg) ?><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+<?php endforeach; endif; ?>
 
 <!-- Filtres -->
 <div class="card border-0 shadow-sm mb-4">
@@ -76,9 +76,9 @@
                         [$tc,$tl] = $typeLabels[$m['type_mandat']] ?? ['secondary',$m['type_mandat']];
                         [$sc,$sl] = $statutLabels[$m['statut']]    ?? ['secondary',$m['statut']];
                         // Cible
-                        if($m['detenu_label']) $cible = '👤 '.$m['detenu_label'].' (Détenu)';
-                        elseif($m['partie_label']) $cible = '👤 '.$m['partie_label'].' (Partie)';
-                        elseif($m['nouveau_nom']) $cible = '👤 '.$m['nouveau_prenom'].' '.$m['nouveau_nom'].' (Nouveau)';
+                        if(!empty($m['detenu_label'])) $cible = '👤 '.$m['detenu_label'].' (Détenu)';
+                        elseif(!empty($m['partie_label'])) $cible = '👤 '.$m['partie_label'].' (Partie)';
+                        elseif(!empty($m['nouveau_nom'])) $cible = '👤 '.($m['nouveau_prenom']??'').' '.$m['nouveau_nom'].' (Nouveau)';
                         else $cible = '—';
                         // Expiration colorée
                         $today = date('Y-m-d');

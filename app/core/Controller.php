@@ -27,8 +27,13 @@ abstract class Controller {
     }
 
     protected function json(mixed $data, int $code = 200): void {
+        // Vider tout buffer de sortie en cours (évite les notices PHP qui corrompent le JSON)
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
         http_response_code($code);
         header('Content-Type: application/json; charset=utf-8');
+        header('X-Content-Type-Options: nosniff');
         echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
     }
