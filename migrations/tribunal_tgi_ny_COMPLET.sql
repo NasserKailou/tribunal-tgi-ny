@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS roles (
 
 -- Fonctions / postes du parquet (paramétrable — migration 010)
 CREATE TABLE IF NOT EXISTS fonctions_parquet (
-    id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id         INT AUTO_INCREMENT PRIMARY KEY,
     code       VARCHAR(100) NOT NULL UNIQUE,
     libelle    VARCHAR(200) NOT NULL,
     type_role  ENUM('procureur','substitut','autre') NOT NULL DEFAULT 'substitut',
@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS fonctions_parquet (
 CREATE TABLE IF NOT EXISTS users (
     id                  INT AUTO_INCREMENT PRIMARY KEY,
     role_id             INT NOT NULL,
-    fonction_parquet_id INT UNSIGNED NULL,
+    fonction_parquet_id INT NULL,
     nom                 VARCHAR(100) NOT NULL,
     prenom              VARCHAR(100) NOT NULL,
     email               VARCHAR(150) UNIQUE NOT NULL,
@@ -450,7 +450,7 @@ CREATE TABLE IF NOT EXISTS alertes (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS parametres_tribunal (
-    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id          INT AUTO_INCREMENT PRIMARY KEY,
     cle         VARCHAR(100) NOT NULL UNIQUE,
     valeur      TEXT,
     groupe      VARCHAR(50) NOT NULL DEFAULT 'general',
@@ -459,7 +459,7 @@ CREATE TABLE IF NOT EXISTS parametres_tribunal (
     type_champ  ENUM('text','textarea','number','boolean','email','tel','url','color','select') NOT NULL DEFAULT 'text',
     options_json TEXT COMMENT 'JSON pour les selects',
     updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    updated_by  INT UNSIGNED,
+    updated_by  INT NULL,
     FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -468,34 +468,34 @@ CREATE TABLE IF NOT EXISTS parametres_tribunal (
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS menus (
-    id        INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id        INT AUTO_INCREMENT PRIMARY KEY,
     code      VARCHAR(100) NOT NULL UNIQUE,
     libelle   VARCHAR(200) NOT NULL,
     icone     VARCHAR(50),
     url       VARCHAR(200),
-    parent_id INT UNSIGNED,
+    parent_id INT NULL,
     ordre     INT UNSIGNED DEFAULT 0,
     actif     TINYINT(1) DEFAULT 1,
     FOREIGN KEY (parent_id) REFERENCES menus(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS fonctionnalites (
-    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id          INT AUTO_INCREMENT PRIMARY KEY,
     code        VARCHAR(100) NOT NULL UNIQUE,
     libelle     VARCHAR(200) NOT NULL,
-    menu_id     INT UNSIGNED,
+    menu_id     INT NULL,
     description TEXT,
     actif       TINYINT(1) DEFAULT 1,
     FOREIGN KEY (menu_id) REFERENCES menus(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS droits_utilisateurs (
-    id                INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id           INT UNSIGNED NOT NULL,
-    menu_id           INT UNSIGNED,
-    fonctionnalite_id INT UNSIGNED,
+    id                INT AUTO_INCREMENT PRIMARY KEY,
+    user_id           INT NOT NULL,
+    menu_id           INT NULL,
+    fonctionnalite_id INT NULL,
     accorde           TINYINT(1) DEFAULT 1 COMMENT '1=accordé, 0=révoqué',
-    accorde_par       INT UNSIGNED,
+    accorde_par       INT NULL,
     updated_at        DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id)              REFERENCES users(id)          ON DELETE CASCADE,
     FOREIGN KEY (menu_id)              REFERENCES menus(id)          ON DELETE CASCADE,
