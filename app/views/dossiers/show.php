@@ -395,14 +395,24 @@
 ================================================================ -->
 <div class="modal fade" id="modalView" tabindex="-1" aria-labelledby="modalViewLabel">
     <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content" style="height:90vh">
+        <div class="modal-content" style="height:90vh;display:flex;flex-direction:column">
             <div class="modal-header py-2">
                 <h6 class="modal-title mb-0" id="modalViewLabel">
-                    <i class="bi bi-eye me-2"></i><span id="modalViewTitle">Document</span>
+                    <i class="bi bi-eye me-2 text-primary"></i><span id="modalViewTitle">Document</span>
                 </h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="d-flex gap-2 align-items-center">
+                    <a id="modalViewDownload" href="#" download
+                       class="btn btn-sm btn-outline-secondary" title="Télécharger">
+                        <i class="bi bi-download"></i>
+                    </a>
+                    <a id="modalViewOpen" href="#" target="_blank"
+                       class="btn btn-sm btn-outline-primary" title="Ouvrir dans un nouvel onglet">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
             </div>
-            <div class="modal-body p-0" style="overflow:hidden;flex:1">
+            <div class="modal-body p-0 flex-fill" style="overflow:hidden">
                 <iframe id="viewerFrame"
                         src="about:blank"
                         style="width:100%;height:100%;border:none;display:block"
@@ -513,20 +523,31 @@
             // Ouvre le modal avec iframe
             document.getElementById('modalViewTitle').textContent = nom;
             document.getElementById('viewerFrame').src = url;
+            // Liens téléchargement / onglet
+            var dlLink   = document.getElementById('modalViewDownload');
+            var openLink = document.getElementById('modalViewOpen');
+            if (dlLink)   { dlLink.href = url;   dlLink.download = nom; }
+            if (openLink) { openLink.href = url; }
             var modal = new bootstrap.Modal(document.getElementById('modalView'));
             modal.show();
         } else {
-            // Téléchargement direct
+            // Téléchargement direct pour docx, xlsx, odt…
             var a = document.createElement('a');
             a.href = url;
             a.download = nom;
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
         }
     };
 
     // Vider l'iframe quand on ferme le modal (évite de garder le PDF en mémoire)
     document.getElementById('modalView').addEventListener('hide.bs.modal', function () {
         document.getElementById('viewerFrame').src = 'about:blank';
+        var dlLink   = document.getElementById('modalViewDownload');
+        var openLink = document.getElementById('modalViewOpen');
+        if (dlLink)   dlLink.href = '#';
+        if (openLink) openLink.href = '#';
     });
 
     /* ----------------------------------------------------------
@@ -598,8 +619,13 @@
         xhr.addEventListener('load', function () {
             btn.disabled = false;
             progressWrap.classList.add('d-none');
+            var rawText = xhr.responseText;
+            // Tentative de parsing JSON — récupère aussi les erreurs serveur JSON
             try {
-                var data = JSON.parse(xhr.responseText);
+                // Chercher le JSON même s'il y a des notices PHP avant
+                var jsonStart = rawText.indexOf('{');
+                var jsonText  = jsonStart >= 0 ? rawText.substring(jsonStart) : rawText;
+                var data = JSON.parse(jsonText);
                 if (data.success) {
                     resultEl.className = 'alert alert-success mt-2';
                     resultEl.textContent = data.message;
@@ -620,8 +646,13 @@
                     resultEl.classList.remove('d-none');
                 }
             } catch (e) {
+                // Réponse non-JSON : afficher le statut HTTP et le début de la réponse
+                var status = xhr.status;
+                var hint   = rawText.length > 0
+                    ? ' (Réponse serveur: ' + rawText.substring(0, 120).replace(/<[^>]+>/g, '') + ')'
+                    : '';
                 resultEl.className = 'alert alert-danger mt-2';
-                resultEl.textContent = 'Réponse serveur invalide.';
+                resultEl.textContent = 'Erreur serveur (HTTP ' + status + ').' + hint;
                 resultEl.classList.remove('d-none');
             }
         });

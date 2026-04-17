@@ -1,4 +1,7 @@
 <?php
+// Buffer de sortie global — protège les réponses JSON des notices PHP
+ob_start();
+
 // ROOT_PATH défini en premier, avant config.php
 if (!defined('ROOT_PATH')) {
     define('ROOT_PATH', dirname(__DIR__));
@@ -204,3 +207,8 @@ $router->get('/api/substituts/charge',                   'ConfigController@apiSu
 $router->post('/pv/declasser/{id}',                      'PVController@declasser');
 
 $router->dispatch();
+
+// Envoyer la réponse HTML bufferisée (les réponses JSON ont déjà appelé exit)
+if (ob_get_level() > 0) {
+    ob_end_flush();
+}

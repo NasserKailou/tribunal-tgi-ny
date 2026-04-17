@@ -319,18 +319,19 @@ function getColor(n) {
     return '#7f1d1d';                      // Rouge très foncé — 10+
 }
 function getBorderColor(n) {
-    if (!n || n <= 0) return '#93c5fd';
-    if (n === 1)      return '#f59e0b';
-    if (n <= 3)       return '#d97706';
-    if (n <= 6)       return '#ea580c';
-    if (n <= 9)       return '#b91c1c';
+    if (!n || n <= 0) return '#5b8db8';  // Bleu visible pour limites communales
+    if (n === 1)      return '#d97706';
+    if (n <= 3)       return '#b45309';
+    if (n <= 6)       return '#c2410c';
+    if (n <= 9)       return '#991b1b';
     return '#450a0a';
 }
 function getWeight(n) {
-    return (n > 0) ? 1.8 : 0.8;
+    // Toujours au moins 1.2 pour que les limites communales soient visibles
+    return (n > 0) ? 2.0 : 1.2;
 }
 function getFillOpacity(n) {
-    return (n > 0) ? 0.75 : 0.30;
+    return (n > 0) ? 0.72 : 0.25;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -342,14 +343,25 @@ function initMap() {
         zoom: 6,
         minZoom: 5,
         maxZoom: 16,
-        zoomControl: true
+        zoomControl: true,
+        // Limiter la vue au Niger
+        maxBounds: [[10.5, -1.0], [24.0, 16.5]],
+        maxBoundsViscosity: 0.85
     });
 
-    // Fond CartoDB Positron (léger, professionnel)
+    // Fond CartoDB Positron (léger, professionnel) — sans labels pour laisser le choroplèthe au premier plan
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
         subdomains: 'abcd',
         maxZoom: 18,
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>'
+    }).addTo(map);
+
+    // Couche de labels par-dessus (villes, noms) — zIndex élevé
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+        subdomains: 'abcd',
+        maxZoom: 18,
+        zIndex: 650,
+        attribution: ''
     }).addTo(map);
 
     addLegend();
@@ -531,7 +543,8 @@ function renderChoropleth(communeFilter, regionFilter) {
                     weight:      getWeight(count),
                     opacity:     1,
                     color:       getBorderColor(count),
-                    fillOpacity: getFillOpacity(count)
+                    fillOpacity: getFillOpacity(count),
+                    dashArray:   count > 0 ? null : null  // limites continues pour toutes communes
                 };
             },
             onEachFeature: function(feature, layer) {
@@ -591,8 +604,18 @@ function renderChoropleth(communeFilter, regionFilter) {
     ).addTo(map);
 
     if (geojsonLayer.getLayers().length > 0) {
-        var maxZoom = communeFilter ? 11 : (regionFilter ? 9 : 6.5);
-        map.fitBounds(geojsonLayer.getBounds(), { padding: [15, 15], maxZoom: maxZoom });
+        var maxZoom = communeFilter ? 11 : (regionFilter ? 9 : 7);
+        // Utiliser les vraies limites du GeoJSON pour cadrer correctement le Niger
+        try {
+            var bounds = geojsonLayer.getBounds();
+            if (bounds.isValid()) {
+                map.fitBounds(bounds, { padding: [20, 20], maxZoom: maxZoom, animate: true });
+            } else {
+                map.setView([17.0, 8.5], 6);
+            }
+        } catch(e) {
+            map.setView([17.0, 8.5], 6);
+        }
     }
 }
 

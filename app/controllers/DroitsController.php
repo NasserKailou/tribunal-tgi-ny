@@ -34,13 +34,13 @@ class DroitsController extends Controller
     }
 
     // ─── GET /admin/droits/user/{id} ─────────────────────────────────────────
-    public function editUser(string $userId): void
+    public function editUser(string $id): void
     {
         $this->requireAdmin();
         $flash = $this->getFlash();
         $currentUser = Auth::currentUser();
 
-        $userId = (int)$userId;
+        $userId = (int)$id;
 
         $targetUser = $this->db->prepare(
             "SELECT u.*, r.libelle AS role_lib, r.code AS role_code
