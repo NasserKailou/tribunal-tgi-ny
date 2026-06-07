@@ -550,6 +550,53 @@ class ConfigController extends Controller
         $this->redirect('/config/maisons-arret');
     }
 
+    // ─── STATISTIQUES POPULATION CARCÉRALE PAR SEXE ─────────────────────────
+    public function maisonArretStats(string $id): void
+    {
+        $this->requireConfig();
+        $id = (int)$id;
+
+        $maison = $this->db->prepare("SELECT * FROM maisons_arret WHERE id=?")->execute([$id])
+            ? $this->db->prepare("SELECT * FROM maisons_arret WHERE id=?")
+            : null;
+        $stmtM = $this->db->prepare("SELECT * FROM maisons_arret WHERE id=?");
+        $stmtM->execute([$id]);
+        $maison = $stmtM->fetch();
+        if (!$maison) {
+            $this->flash('error', 'Maison d\'arrêt introuvable.');
+            $this->redirect('/config/maisons-arret');
+        }
+
+        // Stats par sexe
+        $stmtS = $this->db->prepare(
+            "SELECT sexe, COUNT(*) AS nb
+             FROM detenus
+             WHERE maison_arret_id=? AND statut='incarcere'
+             GROUP BY sexe"
+        );
+        $stmtS->execute([$id]);
+        $statsParSexe = $stmtS->fetchAll();
+
+        // Stats par type de détention et sexe
+        $stmtT = $this->db->prepare(
+            "SELECT type_detention, sexe, COUNT(*) AS nb
+             FROM detenus
+             WHERE maison_arret_id=? AND statut='incarcere'
+             GROUP BY type_detention, sexe
+             ORDER BY type_detention, sexe"
+        );
+        $stmtT->execute([$id]);
+        $statsParType = $stmtT->fetchAll();
+
+        $total = array_sum(array_column($statsParSexe, 'nb'));
+
+        $flash = $this->getFlash();
+        $user  = Auth::currentUser();
+        $pageTitle = 'Population — ' . $maison['nom'];
+        $this->view('config/maison_arret_stats',
+            compact('maison','statsParSexe','statsParType','total','flash','user','pageTitle'));
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
     // 7. SALLES D'AUDIENCE
     // ═══════════════════════════════════════════════════════════════════════════
@@ -658,6 +705,128 @@ class ConfigController extends Controller
         $flash = $this->getFlash();
         $user  = Auth::currentUser();
         $this->view('config/membres-audience', compact('roles','juges','greffiers','parquet','stats','flash','user'));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // DOSSIERS & PV ASSIGNÉS PAR CABINET
+    // ═══════════════════════════════════════════════════════════════════════════
+    public function cabinetDossiers(string $id): void
+    {
+        $this->requireConfig();
+        $id = (int)$id;
+
+        $stmtC = $this->db->prepare("SELECT c.*, CONCAT(u.prenom,' ',u.nom) AS juge_nom FROM cabinets_instruction c LEFT JOIN users u ON u.id=c.juge_id WHERE c.id=?");
+        $stmtC->execute([$id]);
+        $cabinet = $stmtC->fetch();
+        if (!$cabinet) { $this->flash('error','Cabinet introuvable.'); $this->redirect('/config/cabinets'); }
+
+        $statut = $_GET['statut'] ?? '';
+        $where  = "d.cabinet_id = ?";
+        $params = [$id];
+        if ($statut) { $where .= " AND d.statut = ?"; $params[] = $statut; }
+
+        $dossiers = $this->db->prepare(
+            "SELECT d.*, us.nom AS sub_nom, us.prenom AS sub_prenom
+             FROM dossiers d
+             LEFT JOIN users us ON d.substitut_id = us.id
+             WHERE $where
+             ORDER BY d.created_at DESC"
+        );
+        $dossiers->execute($params);
+        $dossiers = $dossiers->fetchAll();
+
+        // PVs transférés vers ce cabinet (via les dossiers)
+        $pvs = $this->db->prepare(
+            "SELECT p.*, ue.nom AS unite_nom
+             FROM pv p
+             JOIN dossiers d ON p.id = d.pv_id
+             LEFT JOIN unites_enquete ue ON p.unite_enquete_id = ue.id
+             WHERE d.cabinet_id = ?
+             ORDER BY p.date_reception DESC"
+        );
+        $pvs->execute([$id]);
+        $pvs = $pvs->fetchAll();
+
+        $flash = $this->getFlash();
+        $user  = Auth::currentUser();
+        $pageTitle = 'Dossiers — Cabinet ' . $cabinet['numero'];
+        $this->view('config/cabinet_dossiers', compact('cabinet','dossiers','pvs','flash','user','pageTitle','statut'));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // DOSSIERS & PV ASSIGNÉS PAR SUBSTITUT
+    // ═══════════════════════════════════════════════════════════════════════════
+    public function substitutDossiers(string $id): void
+    {
+        $this->requireConfig();
+        $id = (int)$id;
+
+        $stmtS = $this->db->prepare("SELECT u.*, r.libelle AS role_lib FROM users u JOIN roles r ON u.role_id=r.id WHERE u.id=? AND r.code='substitut_procureur'");
+        $stmtS->execute([$id]);
+        $substitut = $stmtS->fetch();
+        if (!$substitut) { $this->flash('error','Substitut introuvable.'); $this->redirect('/config/substituts'); }
+
+        $dossiers = $this->db->prepare(
+            "SELECT d.*, ci.numero AS cabinet_num, ci.libelle AS cabinet_lib
+             FROM dossiers d
+             LEFT JOIN cabinets_instruction ci ON d.cabinet_id = ci.id
+             WHERE d.substitut_id = ?
+             ORDER BY d.created_at DESC"
+        );
+        $dossiers->execute([$id]);
+        $dossiers = $dossiers->fetchAll();
+
+        $pvs = $this->db->prepare(
+            "SELECT p.*, ue.nom AS unite_nom
+             FROM pv p
+             LEFT JOIN unites_enquete ue ON p.unite_enquete_id = ue.id
+             WHERE p.substitut_id = ?
+             ORDER BY p.date_reception DESC"
+        );
+        $pvs->execute([$id]);
+        $pvs = $pvs->fetchAll();
+
+        $flash = $this->getFlash();
+        $user  = Auth::currentUser();
+        $pageTitle = 'Dossiers — ' . $substitut['prenom'] . ' ' . $substitut['nom'];
+        $this->view('config/substitut_dossiers', compact('substitut','dossiers','pvs','flash','user','pageTitle'));
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // API : CABINETS TRIÉS PAR CHARGE (pour transfert intelligent)
+    // ═══════════════════════════════════════════════════════════════════════════
+    public function apiCabinetsCharge(): void
+    {
+        Auth::requireLogin();
+        $cabinets = $this->db->query(
+            "SELECT c.id, c.numero, c.libelle,
+                    CONCAT(IFNULL(u.prenom,''),' ',IFNULL(u.nom,'')) AS juge_nom,
+                    (SELECT COUNT(*) FROM dossiers d WHERE d.cabinet_id=c.id AND d.statut NOT IN ('juge','classe')) AS nb_dossiers,
+                    (SELECT COUNT(*) FROM pv p JOIN dossiers d2 ON p.id=d2.pv_id WHERE d2.cabinet_id=c.id AND p.statut='transfere_instruction') AS nb_pvs
+             FROM cabinets_instruction c
+             LEFT JOIN users u ON u.id = c.juge_id
+             WHERE c.actif = 1
+             ORDER BY nb_dossiers ASC, nb_pvs ASC"
+        )->fetchAll();
+        $this->json(['success' => true, 'data' => $cabinets]);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // API : SUBSTITUTS TRIÉS PAR CHARGE
+    // ═══════════════════════════════════════════════════════════════════════════
+    public function apiSubstitutsCharge(): void
+    {
+        Auth::requireLogin();
+        $substituts = $this->db->query(
+            "SELECT u.id, u.nom, u.prenom,
+                    (SELECT COUNT(*) FROM dossiers d WHERE d.substitut_id=u.id AND d.statut NOT IN ('juge','classe')) AS nb_dossiers,
+                    (SELECT COUNT(*) FROM pv p WHERE p.substitut_id=u.id AND p.statut='en_traitement') AS nb_pvs
+             FROM users u
+             JOIN roles r ON u.role_id=r.id
+             WHERE r.code='substitut_procureur' AND u.actif=1
+             ORDER BY nb_dossiers ASC, nb_pvs ASC"
+        )->fetchAll();
+        $this->json(['success' => true, 'data' => $substituts]);
     }
 
 }

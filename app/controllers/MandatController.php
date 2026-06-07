@@ -294,7 +294,8 @@ class MandatController extends Controller
         $stmt = $this->db->prepare(
             "SELECT m.*,
                     CONCAT(u.prenom,' ',u.nom)    AS emetteur_nom,
-                    u.role_code                   AS emetteur_role,
+                    r.code                        AS emetteur_role,
+                    r.libelle                     AS emetteur_role_libelle,
                     d.numero_rg, d.objet          AS dossier_objet,
                     CONCAT(det.prenom,' ',det.nom) AS detenu_label,
                     det.numero_ecrou,
@@ -302,6 +303,7 @@ class MandatController extends Controller
                     p.type_partie
              FROM mandats m
              LEFT JOIN users   u   ON m.emetteur_id = u.id
+             LEFT JOIN roles   r   ON u.role_id     = r.id
              LEFT JOIN dossiers d  ON m.dossier_id  = d.id
              LEFT JOIN detenus det ON m.detenu_id   = det.id
              LEFT JOIN parties p   ON m.partie_id   = p.id

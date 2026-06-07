@@ -1,0 +1,9 @@
+Options -Indexes
+RewriteEngine On
+
+# Si la requête est déjà dans /public, ne pas rediriger
+RewriteCond %{REQUEST_URI} !^/([^/]+/)?public/
+RewriteCond %{REQUEST_URI} !^/([^/]+/)?index\.php$
+
+# Rediriger tout vers public/login
+RewriteRule ^(.*)$ public/login [R=302,L]

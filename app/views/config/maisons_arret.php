@@ -58,13 +58,17 @@
                         <td><?= htmlspecialchars($m['directeur'] ?? '—') ?></td>
                         <td><?= htmlspecialchars($m['telephone'] ?? '—') ?></td>
                         <td class="text-end">
+                            <a href="<?= BASE_URL ?>/config/maisons-arret/stats/<?= $m['id'] ?>"
+                               class="btn btn-sm btn-outline-info me-1" title="Stats population par sexe">
+                                <i class="bi bi-bar-chart-line"></i>
+                            </a>
                             <button class="btn btn-sm btn-outline-warning me-1"
                                 data-bs-toggle="modal" data-bs-target="#modalEdit<?= $m['id'] ?>">
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <form method="POST" action="<?= BASE_URL ?>/config/maisons-arret/delete/<?= $m['id'] ?>" class="d-inline"
                                 onsubmit="return confirm('Supprimer cette maison d\'arrêt ?')">
-                                <input type="hidden" name="csrf_token" value="<?= CSRF::generate() ?>">
+                                <?= CSRF::field() ?>
                                 <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                             </form>
                         </td>
@@ -74,7 +78,7 @@
                         <div class="modal-dialog modal-lg">
                             <div class="modal-content">
                                 <form method="POST" action="<?= BASE_URL ?>/config/maisons-arret/update/<?= $m['id'] ?>">
-                                    <input type="hidden" name="csrf_token" value="<?= CSRF::generate() ?>">
+                                    <?= CSRF::field() ?>
                                     <div class="modal-header bg-dark text-white">
                                         <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Modifier la maison d'arrêt</h5>
                                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -152,7 +156,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form method="POST" action="<?= BASE_URL ?>/config/maisons-arret/store">
-                <input type="hidden" name="csrf_token" value="<?= CSRF::generate() ?>">
+                <?= CSRF::field() ?>
                 <div class="modal-header bg-secondary text-white">
                     <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Nouvelle maison d'arrêt</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>

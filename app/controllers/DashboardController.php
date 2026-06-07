@@ -85,7 +85,56 @@ class DashboardController extends Controller {
         // Alertes non lues
         $nbAlertesTotal = (int)$this->db->query("SELECT COUNT(*) FROM alertes WHERE est_lue=0")->fetchColumn();
 
-        return compact('pvMois','dossiersEnCours','audiencesSemaine','population','pvStatuts','dossierTypes','detentionTypes','pvParMois','nbAlertesTotal');
+        // ── Nouveaux modules ──────────────────────────────────────────
+        $nbAvocats = 0;
+        try {
+            $nbAvocats = (int)$this->db->query("SELECT COUNT(*) FROM avocats WHERE statut='actif'")->fetchColumn();
+        } catch (\Exception $e) {}
+
+        $nbControlesActifs = 0;
+        try {
+            $nbControlesActifs = (int)$this->db->query("SELECT COUNT(*) FROM controles_judiciaires WHERE statut='actif'")->fetchColumn();
+        } catch (\Exception $e) {}
+
+        $nbExpertisesEnCours = 0;
+        try {
+            $nbExpertisesEnCours = (int)$this->db->query("SELECT COUNT(*) FROM expertises_judiciaires WHERE statut IN ('ordonnee','en_cours')")->fetchColumn();
+        } catch (\Exception $e) {}
+
+        $nbScelles = 0;
+        try {
+            $nbScelles = (int)$this->db->query("SELECT COUNT(*) FROM scelles WHERE statut IN ('depose','inventorie')")->fetchColumn();
+        } catch (\Exception $e) {}
+
+        $nbVoiesRecours = 0;
+        try {
+            $nbVoiesRecours = (int)$this->db->query("SELECT COUNT(*) FROM voies_recours WHERE statut IN ('declare','instruit')")->fetchColumn();
+        } catch (\Exception $e) {}
+
+        $nbOrdonnances = 0;
+        try {
+            $nbOrdonnances = (int)$this->db->query("SELECT COUNT(*) FROM ordonnances WHERE YEAR(date_ordonnance)=YEAR(CURDATE())")->fetchColumn();
+        } catch (\Exception $e) {}
+
+        // Dossiers par statut (pour tableau analytique)
+        $dossierStatuts = $this->db->query(
+            "SELECT statut, COUNT(*) as nb FROM dossiers GROUP BY statut ORDER BY nb DESC"
+        )->fetchAll();
+
+        // Jugements ce mois
+        $jugementsMois = 0;
+        try {
+            $jugementsMois = (int)$this->db->query(
+                "SELECT COUNT(*) FROM jugements WHERE YEAR(date_jugement)=YEAR(CURDATE()) AND MONTH(date_jugement)=MONTH(CURDATE())"
+            )->fetchColumn();
+        } catch (\Exception $e) {}
+
+        return compact(
+            'pvMois','dossiersEnCours','audiencesSemaine','population',
+            'pvStatuts','dossierTypes','detentionTypes','pvParMois',
+            'nbAlertesTotal','nbAvocats','nbControlesActifs','nbExpertisesEnCours',
+            'nbScelles','nbVoiesRecours','nbOrdonnances','dossierStatuts','jugementsMois'
+        );
     }
 
     public function apiStats(): void {

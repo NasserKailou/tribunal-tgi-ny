@@ -136,12 +136,6 @@
           <input type="text" name="etablissement" class="form-control"
                  value="<?=htmlspecialchars($_POST['etablissement']??$detenu['etablissement']??'')?>">
         </div>
-        <div class="col-md-6">
-          <label class="form-label">Date de naissance</label>
-          <input type="date" name="date_naissance" class="form-control"
-                 value="<?=$_POST['date_naissance']??$detenu['date_naissance']??''?>" readonly>
-          <small class="text-muted">Modifiable uniquement par un administrateur</small>
-        </div>
       </div>
 
       <!-- Photo -->

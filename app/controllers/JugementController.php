@@ -11,11 +11,10 @@ class JugementController extends Controller {
         $type    = $_GET['type']??'';
 
         $where=[]; $params=[];
-        if($search){$where[]="(d.numero_rg LIKE :q OR j.numero_jugement LIKE :q)";$params['q']="%$search%";}
+        if($search){$where[]="(d.numero_rg LIKE :q1 OR j.numero_jugement LIKE :q2)";$params['q1']="%$search%";$params['q2']="%$search%";}
         if($type){$where[]="j.type_jugement=:type";$params['type']=$type;}
         $whereSQL=$where?'WHERE '.implode(' AND ',$where):'';
 
-        $total=(int)$this->db->prepare("SELECT COUNT(*) FROM jugements j JOIN dossiers d ON j.dossier_id=d.id $whereSQL")->execute($params)?$this->db->prepare("SELECT COUNT(*) FROM jugements j JOIN dossiers d ON j.dossier_id=d.id $whereSQL"):null;
         $countStmt=$this->db->prepare("SELECT COUNT(*) FROM jugements j JOIN dossiers d ON j.dossier_id=d.id $whereSQL");
         $countStmt->execute($params);
         $total=(int)$countStmt->fetchColumn();

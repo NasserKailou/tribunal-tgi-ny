@@ -15,6 +15,7 @@ class ExportController extends Controller {
 
         $stmt = $this->db->prepare(
             "SELECT j.*, d.numero_rg, d.numero_rp, d.numero_ri, d.objet, d.type_affaire,
+                    d.substitut_id, d.cabinet_id,
                     g.nom as greffier_nom, g.prenom as greffier_prenom,
                     u.nom as created_nom, u.prenom as created_prenom
              FROM jugements j
@@ -26,6 +27,14 @@ class ExportController extends Controller {
         $stmt->execute([(int)$id]);
         $jugement = $stmt->fetch();
         if (!$jugement) { $this->redirect('/jugements'); }
+
+        // ── Contrôle d'accès via le dossier parent ───────────────
+        if (!AccessControl::canAccessDossier($jugement)) {
+            $this->flash('error', 'Accès refusé : vous n\'avez pas accès à ce jugement.');
+            $this->redirect('/dossiers');
+            exit;
+        }
+        // ─────────────────────────────────────────────────────────────
 
         // Parties du dossier
         $pStmt = $this->db->prepare("SELECT * FROM parties WHERE dossier_id = ? ORDER BY type_partie");
@@ -61,6 +70,10 @@ class ExportController extends Controller {
         $pv = $stmt->fetch();
         if (!$pv) { $this->redirect('/pv'); }
 
+        // ── Contrôle d'accès ─────────────────────────────────────────
+        AccessControl::assertPVAccess($pv, $this);
+        // ─────────────────────────────────────────────────────────────
+
         $piStmt = $this->db->prepare(
             "SELECT pi.nom FROM primo_intervenants pi
              JOIN pv_primo_intervenants ppi ON pi.id = ppi.primo_intervenant_id
@@ -93,6 +106,10 @@ class ExportController extends Controller {
         $dStmt->execute([(int)$id]);
         $dossier = $dStmt->fetch();
         if (!$dossier) { $this->redirect('/dossiers'); }
+
+        // ── Contrôle d'accès ─────────────────────────────────────────
+        AccessControl::assertDossierAccess($dossier, $this);
+        // ─────────────────────────────────────────────────────────────
 
         $pStmt = $this->db->prepare("SELECT * FROM parties WHERE dossier_id=? ORDER BY type_partie");
         $pStmt->execute([(int)$id]);

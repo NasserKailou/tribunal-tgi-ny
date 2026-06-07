@@ -11,7 +11,7 @@ class DetenusController extends Controller {
         $statut = $_GET['statut']??'incarcere';
 
         $where=[]; $params=[];
-        if($search){$where[]="(d.nom LIKE :q OR d.prenom LIKE :q OR d.numero_ecrou LIKE :q)";$params['q']="%$search%";}
+        if($search){$where[]="(d.nom LIKE :q1 OR d.prenom LIKE :q2 OR d.numero_ecrou LIKE :q3)";$params['q1']="%$search%";$params['q2']="%$search%";$params['q3']="%$search%";}
         if($type){$where[]="d.type_detention=:type";$params['type']=$type;}
         if($statut){$where[]="d.statut=:statut";$params['statut']=$statut;}
         $whereSQL=$where?'WHERE '.implode(' AND ',$where):'';

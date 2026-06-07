@@ -130,10 +130,7 @@
         </a>
     </div>
 
-</div>
-
-
-    <div class="col-md-6 col-xl-4">
+     <div class="col-md-6 col-xl-4">
         <a href="<?= BASE_URL ?>/config/membres-audience" class="text-decoration-none">
             <div class="card border-0 shadow-sm h-100 config-card">
                 <div class="card-body d-flex align-items-center gap-3 p-4">
@@ -149,6 +146,47 @@
             </div>
         </a>
     </div>
+
+    <?php if (Auth::hasRole(['admin'])): ?>
+    <div class="col-md-6 col-xl-4">
+        <a href="<?= BASE_URL ?>/config/parametres" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 config-card" style="border-left:4px solid #0a2342!important">
+                <div class="card-body d-flex align-items-center gap-3 p-4">
+                    <div class="config-icon text-white" style="background:#0a2342">
+                        <i class="bi bi-sliders fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-1">Paramètres du tribunal</h5>
+                        <p class="text-muted mb-0 small">Identité, documents, délais, numérotation</p>
+                        <span class="badge mt-1" style="background:#0a2342">Configuration avancée</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        <a href="<?= BASE_URL ?>/admin/droits" class="text-decoration-none">
+            <div class="card border-0 shadow-sm h-100 config-card" style="border-left:4px solid #dc3545!important">
+                <div class="card-body d-flex align-items-center gap-3 p-4">
+                    <div class="config-icon text-white" style="background:#dc3545">
+                        <i class="bi bi-shield-lock fs-3"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-1">Gestion des droits</h5>
+                        <p class="text-muted mb-0 small">Menus et fonctionnalités par utilisateur</p>
+                        <span class="badge bg-danger mt-1">Administration</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <?php endif; ?>
+
+</div>
+
+
+   
 
 <style>
 .config-card { transition: transform .15s, box-shadow .15s; cursor: pointer; }
