@@ -49,7 +49,19 @@ class Auth {
 
     public static function requireLogin(): void {
         if (!self::isLoggedIn()) {
-            $_SESSION['intended_url'] = $_SERVER['REQUEST_URI'] ?? '/';
+            // Stocker l'URI courante pour redirection post-login
+            // On extrait le chemin relatif (sans le préfixe BASE_URL)
+            $requestUri = $_SERVER['REQUEST_URI'] ?? '/';
+            $basePath   = parse_url(BASE_URL, PHP_URL_PATH) ?? '';
+            if ($basePath && strpos($requestUri, $basePath) === 0) {
+                $relativePath = substr($requestUri, strlen($basePath)) ?: '/';
+            } else {
+                $relativePath = $requestUri;
+            }
+            // Ne pas sauvegarder les URLs d'API ou de login
+            if (!in_array($relativePath, ['/login', '/logout']) && strpos($relativePath, '/api/') !== 0) {
+                $_SESSION['intended_url'] = $relativePath;
+            }
             header('Location: ' . BASE_URL . '/login');
             exit;
         }

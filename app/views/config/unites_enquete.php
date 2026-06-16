@@ -51,7 +51,7 @@ $types = [
                             </button>
                             <form method="POST" action="<?= BASE_URL ?>/config/unites-enquete/delete/<?= $u['id'] ?>" class="d-inline"
                                 onsubmit="return confirm('Supprimer cette unité d\'enquête ?')">
-                                <input type="hidden" name="csrf_token" value="<?= CSRF::generate() ?>">
+                                <?= CSRF::field() ?>
                                 <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                             </form>
                         </td>
@@ -61,7 +61,7 @@ $types = [
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <form method="POST" action="<?= BASE_URL ?>/config/unites-enquete/update/<?= $u['id'] ?>">
-                                    <input type="hidden" name="csrf_token" value="<?= CSRF::generate() ?>">
+                                    <?= CSRF::field() ?>
                                     <div class="modal-header bg-dark text-white">
                                         <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Modifier l'unité</h5>
                                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -116,7 +116,7 @@ $types = [
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" action="<?= BASE_URL ?>/config/unites-enquete/store">
-                <input type="hidden" name="csrf_token" value="<?= CSRF::generate() ?>">
+                <?= CSRF::field() ?>
                 <div class="modal-header bg-warning text-dark">
                     <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Nouvelle unité d'enquête</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>

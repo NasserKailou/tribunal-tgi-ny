@@ -41,13 +41,17 @@
                         <td><?= htmlspecialchars($s['telephone'] ?? '—') ?></td>
                         <td><?= $s['actif'] ? '<span class="badge bg-success">Actif</span>' : '<span class="badge bg-secondary">Inactif</span>' ?></td>
                         <td class="text-end">
+                            <a href="<?= BASE_URL ?>/config/substituts/dossiers/<?= $s['id'] ?>"
+                               class="btn btn-sm btn-outline-secondary me-1" title="Voir les dossiers et PVs assignés">
+                                <i class="bi bi-folder2-open"></i>
+                            </a>
                             <button class="btn btn-sm btn-outline-info me-1"
                                 data-bs-toggle="modal" data-bs-target="#modalEdit<?= $s['id'] ?>">
                                 <i class="bi bi-pencil"></i>
                             </button>
                             <form method="POST" action="<?= BASE_URL ?>/config/substituts/delete/<?= $s['id'] ?>" class="d-inline"
                                 onsubmit="return confirm('Supprimer ce substitut ? Cette action est irréversible.')">
-                                <input type="hidden" name="csrf_token" value="<?= CSRF::generate() ?>">
+                                <?= CSRF::field() ?>
                                 <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                             </form>
                         </td>
@@ -57,7 +61,7 @@
                         <div class="modal-dialog">
                             <div class="modal-content">
                                 <form method="POST" action="<?= BASE_URL ?>/config/substituts/update/<?= $s['id'] ?>">
-                                    <input type="hidden" name="csrf_token" value="<?= CSRF::generate() ?>">
+                                    <?= CSRF::field() ?>
                                     <div class="modal-header bg-dark text-white">
                                         <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Modifier le substitut</h5>
                                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -118,7 +122,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" action="<?= BASE_URL ?>/config/substituts/store">
-                <input type="hidden" name="csrf_token" value="<?= CSRF::generate() ?>">
+                <?= CSRF::field() ?>
                 <div class="modal-header bg-info text-dark">
                     <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Nouveau substitut du procureur</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
